@@ -45,10 +45,11 @@ function drawMini(){
     const hunt=questStarted&&!chapterDone;
     for(const n of NPCS){
       if(n.scene==='village'){const [x,y]=P2(n.x,n.y);
-        if(hunt&&n!==SALEM&&!met.has(n.id))star(x,y,miniBig?6:5.5);
+        if(n.noMeet){g.fillStyle='#f6ead2';circ(g,x,y,2);}
+        else if(hunt&&n!==SALEM&&!met.has(n.id))star(x,y,miniBig?6:5.5);
         else if(n===SALEM&&(!questStarted||met.size>=VILLAGERS.length&&!chapterDone))star(x,y,miniBig?7:6);
         else{g.fillStyle='#f6ead2';circ(g,x,y,2);}}
-      else if(hunt&&!met.has(n.id)){const h=MAP.houses.find(q=>q.id===n.scene);const [x,y]=P2(h.doorX,h.base);star(x,y,miniBig?6:5.5);}
+      else if(hunt&&!n.noMeet&&!met.has(n.id)&&HOUSE_OF[n.scene]){const h=HOUSE_OF[n.scene];const [x,y]=P2(h.doorX,h.base);star(x,y,miniBig?6:5.5);}
     }
     if(chapterDone)for(const n of NPCS){const m=questMark(n);if(!m)continue;const sc2=n.scene==='village'?n:MAP.houses.find(h=>h.id===n.scene);if(!sc2)continue;const [x,y]=n.scene==='village'?P2(n.x,n.y):P2(sc2.doorX,sc2.base);g.fillStyle=m==='!'?'#ffd36b':'#7be08a';circ(g,x,y,miniBig?6:5);g.fillStyle='#3a210c';g.font='900 8px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText(m==='!'?'!':'؟',x,y+.5);}
     for(const pk of PICKUPS)if(pk.scene==='village'&&pickupActive(pk)){const [x,y]=P2(pk.x,pk.y);g.fillStyle='#fff1a8';drawStar(g,x,y,3.4);}

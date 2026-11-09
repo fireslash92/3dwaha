@@ -28,6 +28,7 @@ function collidersFor(who){
 }
 function updateNpc(n,dt){
   if(state!=='play'){n.moving=false;return;}
+  if(n.route&&n.route.length){walkRoute(n,dt);return;}
   const dh=Math.hypot(hero.x-n.x,hero.y-n.y);
   if(n.wander){
     if(dh<64){n.moving=false;n.dir=face(n,hero);return;}
@@ -69,6 +70,8 @@ function findTarget(){
 }
 function update(dt){
   time+=dt;
+  lifeTick(dt);
+  for(const n of NPCS)if(n.route&&n.route.length&&n.scene!==scene.id)walkRoute(n,dt);
   if(talkCooldown>0)talkCooldown-=dt;
   if(state==='play'||state==='dialog')P.clock=(P.clock??540)+dt*DAY_RATE;
   for(const n of NPCS)if(n.scene===scene.id)updateNpc(n,dt);

@@ -28,6 +28,7 @@
  "src/world/wadi.js",
  "src/ui/bestiary.js",
  "src/world/fort.js",
+ "src/world/life.js",
  "src/ui/minimap.js",
  "src/core/save.js",
  "src/ui/menu.js",

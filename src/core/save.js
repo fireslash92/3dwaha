@@ -22,6 +22,7 @@ let lastSave=0,savedData=null;
 function saveGame(){if(state==='title')return false;lastSave=time;return store(SAVE_KEY,snapshot());}
 function applySave(d){
   const f=freshProgress();
+  NPCS.forEach(n=>{n.slotKey=null;n.route=null;});lifeReady=false;
   P=f;
   if(d.P){P.xp=+d.P.xp||0;P.hp=d.P.hp??null;P.mp=d.P.mp??null;P.inv=Object.assign({},d.P.inv||f.inv);P.eq=Object.assign(f.eq,d.P.eq||{});P.gifts=Object.assign({},d.P.gifts||{});P.gauge=+d.P.gauge||0;P.flags=Object.assign({},d.P.flags||{});P.ally=Object.assign({hp:null,mp:null},d.P.ally||{});P.money=typeof d.P.money==='number'?d.P.money:(d.chapter?200:50);P.kills=Object.assign({},d.P.kills||{});P.q=JSON.parse(JSON.stringify(d.P.q||{}));P.clock=typeof d.P.clock==='number'?d.P.clock:540;P.lore=JSON.parse(JSON.stringify(d.P.lore||{}));}
   for(const sl in P.eq)if(P.eq[sl]&&!ITEMS[P.eq[sl]])P.eq[sl]=null;
@@ -34,7 +35,7 @@ function applySave(d){
 }
 function resetWorld(){
   P=freshProgress();met.clear();questStarted=false;chapterDone=false;doorHintShown=false;toastQ.length=0;
-  NPCS.forEach(n=>{n.x=n.home.x;n.y=n.home.y;n.dir=n.home.dir;n.scene=n.home.scene;n.talked=0;n.target=null;n.moving=false;});
+  NPCS.forEach(n=>{n.x=n.home.x;n.y=n.home.y;n.dir=n.home.dir;n.scene=n.home.scene;n.talked=0;n.target=null;n.moving=false;n.slotKey=null;n.route=null;});lifeReady=false;
   scene=SCENES.village;ensureScene(scene);hero.x=MAP.heroSpawn.x;hero.y=MAP.heroSpawn.y;hero.dir='up';
   store(SAVE_KEY,null);savedData=null;updateHud(false);$('menuDot').hidden=true;
 }

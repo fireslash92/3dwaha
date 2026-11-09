@@ -115,11 +115,17 @@ const SFX=(()=>{
     anvil:()=>{[0,.22,.44].forEach((d,i)=>{noise({type:'bandpass',f:3200,q:4,dur:.05,v:.12,d});tone({f:1480+i*120,dur:.35,v:.06,d});});arp([784,1046,1318],.07,{type:'triangle',dur:.25,v:.07,d:.7});},
     bossIntro:()=>{tone({f:55,f2:45,type:'sawtooth',lp:300,a:.3,dur:1.4,v:.12});noise({type:'highpass',f:200,f2:5000,a:.4,dur:.9,v:.1});arp([294,311,370,392],.18,{type:'square',lp:1400,dur:.4,v:.05,d:.6});},
     bossRoar:()=>{tone({f:140,f2:70,type:'sawtooth',lp:800,a:.05,dur:.7,v:.14});noise({type:'bandpass',f:600,f2:200,q:.7,a:.05,dur:.7,v:.14});},
+    bleat:o=>{const f=o.kid?560:380,v=.05*(o.vol??1);for(let i=0;i<3;i++)tone({f:f*(1+(i%2)*.06),f2:f*(.92+(i%2)*.1),type:'sawtooth',lp:1800,a:.02,dur:.13,v,d:i*.12,pan:o.pan});},
+    cluck:o=>{const v=.035*(o.vol??1);[760,880,700].forEach((f,i)=>tone({f,f2:f*.8,type:'square',lp:2600,dur:.04,v,d:i*.08,pan:o.pan}));},
+    crow:o=>{const v=.04*(o.vol??1);tone({f:520,f2:900,type:'sawtooth',lp:2400,a:.03,dur:.25,v,pan:o.pan,slide:.2});tone({f:900,f2:600,type:'sawtooth',lp:2400,dur:.45,v,d:.27,pan:o.pan});},
+    meow:o=>{const v=.04*(o.vol??1);tone({f:620,f2:920,type:'triangle',lp:2600,a:.03,dur:.18,v,pan:o.pan,slide:.15});tone({f:920,f2:520,type:'triangle',lp:2600,dur:.22,v,d:.17,pan:o.pan});},
+    flap:o=>{const v=.06*(o.vol??1);for(let i=0;i<7;i++)noise({type:'bandpass',f:900+Math.random()*700,q:1.2,dur:.035,v,d:i*.05,pan:o.pan});},
+    grunt:o=>{const v=.06*(o.vol??1);tone({f:110,f2:78,type:'sawtooth',lp:520,a:.04,dur:.45,v,pan:o.pan});noise({type:'lowpass',f:500,a:.04,dur:.3,v:v*.6,pan:o.pan});},
     defeat:()=>arp([392,349,311,262],.28,{type:'triangle',lp:1600,dur:.5,v:.08}),
   };
   function play(name,o){if(!ready()||!S[name])return;try{S[name](o||{});}catch(err){(window.__sfxErr=window.__sfxErr||[]).push(name+': '+err.message);}}
   const names=()=>Object.keys(S);
-  const VOICES={salem:140,saeed:175,rashid:160,hamad:330,mariam:280,shamsa:400,ummsaeed:235,aisha:300,zuwaina:215};
+  const VOICES={peddler:150,salem:140,saeed:175,rashid:160,hamad:330,mariam:280,shamsa:400,ummsaeed:235,aisha:300,zuwaina:215};
   function voice(n,text){if(!n)return;if(n.portrait){play('mystic');return;}play('voice',{f:VOICES[n.id]||220,n:Math.min(6,Math.max(2,Math.ceil(text.length/12)))});}
   function step(kind,pan){play('step',{kind,pan});}
   /* ---- music: original tunes in Arabic maqamat (bayati for the village, hijaz for danger) ---- */

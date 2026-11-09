@@ -138,7 +138,7 @@ function tabQuests(){
   if(!questStarted)html+=`<div class="quest"><h4 style="margin-top:0">الوصول إلى عين الوادي</h4><p class="muted" style="margin:0">تحدّث إلى سالم عند النافورة.</p></div>`;
   else html+=`<div class="quest${chapterDone?' done':''}"><h4 style="margin-top:0">أهل عين الوادي ${chapterDone?'<span class="chip up">مكتملة</span>':`<span class="chip">${AR(done)} من ${AR(total)}</span>`}</h4>
     <p class="muted">${chapterDone?'عرفتَ أهل القرية كلهم.':done>=total?'عُد إلى سالم عند النافورة.':'تعرّف على أهل القرية واحدًا واحدًا.'}</p>
-    ${chapterDone?'':`<ul class="check">${VILLAGERS.map(n=>{const ok=met.has(n.id);return `<li class="${ok?'done':''}"><i>${ok?'✓':''}</i><span class="grow"><b>${ok?n.name:'شخص لم تقابله'}</b><br><span class="muted">${HINTS[n.id]}</span></span></li>`;}).join('')}</ul>`}</div>`;
+    ${chapterDone?'':`<ul class="check">${VILLAGERS.map(n=>{const ok=met.has(n.id);return `<li class="${ok?'done':''}"><i>${ok?'✓':''}</i><span class="grow"><b>${ok?n.name:'شخص لم تقابله'}</b><br><span class="muted">${hintFor(n)}</span></span></li>`;}).join('')}</ul>`}</div>`;
   if(chapterDone){
     const st=[[P.flags.aisha,'انضمت عائشة إلى الفريق','عائشة تنتظرك عند مدخل الغابة'],[P.flags.stone,'وصلتم إلى حجر النور','اتبع ممر الغابة حتى الضوء'],[P.flags.boss,'هزمتم حارس النور','اهزم حارس النور (ننصح بالمستوى الخامس أو أعلى)']];
     html+=`<div class="quest${P.flags.boss?' done':''}"><h4 style="margin-top:0">ضوء بين الأشجار ${P.flags.boss?'<span class="chip up">مكتملة</span>':'<span class="chip">الفصل الثاني</span>'}</h4>

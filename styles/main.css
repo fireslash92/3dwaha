@@ -385,3 +385,6 @@ button.row{cursor:pointer}
   .b-party .bar i{height:6px}
   .b-ui{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 6px)}
 }
+
+/* ---------- battle transition: hide the field HUD while the screen shatters ---------- */
+#game.transit #stickZone,#game.transit #actBtn,#game.transit #menuBtn,#game.transit #topRight,#game.transit #toast{opacity:0;pointer-events:none;transition:opacity .12s}

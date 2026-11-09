@@ -7,7 +7,7 @@
 let last=performance.now();
 function frame(now){
   const dt=Math.min(.05,Math.max(0,(now-last)/1000));last=now;
-  update(dt);render();SFX.tick(dt);drawMini();
+  update(dt);render();drawTransition();SFX.tick(dt);drawMini();
   requestAnimationFrame(frame);
 }
 function start(data){

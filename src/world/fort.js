@@ -223,7 +223,7 @@ async function golemAction(e){
   if(e.phase2&&e.defBonus===0&&e.turn%5===2){e.defBonus=6;SFX.play('shield');await say('يرمّم العملاق قشرته من جديد.',1000);return;}
   const ms=members().filter(alive);if(!ms.length)return;
   if(e.turn%4===0){
-    SFX.play('special');fx('flash',0,0);await wait(260);
+    SFX.play('special');fx('flash',0,0);shake(11,.8);buzz([50,30,90]);await wait(260);
     for(const id of ms){let dmg=rollDmg((e.d.atk*1.45-mDef(id))*(e.phase2?1.15:1));if(B.m[id].guard)dmg=Math.ceil(dmg/2);hurt(id,dmg);}
     await say('العملاق يضرب الأرض بقبضتيه، فيهتز الحصن كله!',1000);for(const id of ms)await fallenCheck(id);return;
   }

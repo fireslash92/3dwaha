@@ -80,7 +80,7 @@ function update(dt){
       const moved=Math.hypot(p.x-hero.x,p.y-hero.y);
       hero.x=p.x;hero.y=p.y;hero.moving=true;hero.phase+=dt*11;
       {const lt=trail[trail.length-1];if(!lt||Math.hypot(hero.x-lt.x,hero.y-lt.y)>=3){trail.push({x:hero.x,y:hero.y,dir:hero.dir});if(trail.length>40)trail.shift();}}
-      const si=Math.floor(hero.phase/Math.PI);if(si!==lastStep&&moved>.05){lastStep=si;SFX.step(scene.interior?'wood':scene.fort?'stone':scene.forest||scene.wadi?'dirt':MAP.onAnyPath(hero.x,hero.y)?'stone':'grass',si%2?.15:-.15);}
+      const si=Math.floor(hero.phase/Math.PI);if(si!==lastStep&&moved>.05){lastStep=si;SFX.step(scene.interior?'wood':scene.fort?'stone':scene.forest||scene.wadi?'dirt':MAP.onAnyPath(hero.x,hero.y)?'stone':'grass',si%2?.15:-.15);stepFeel(scene.fort?'stone':MAP.onAnyPath(hero.x,hero.y)?'stone':'grass',si%2?1:-1);}
       if(scene.forest&&hero.y<FH-150&&Math.hypot(hero.x-FOREST.clearing.x,hero.y-FOREST.clearing.y)>FOREST.clearing.r+10||scene.wadi&&hero.x>150&&hero.x<1080&&hero.y<500||scene.fort&&hero.y>320&&hero.y<830){encounterMeter-=moved;if(encounterMeter<=0){resetMeter();startEncounter();}}
     }else{hero.moving=false;hero.phase=0;}
     target=findTarget();
@@ -105,6 +105,7 @@ function update(dt){
   if(toastKey&&time>toastUntil)hideToast();
   if(!toastKey&&toastQ.length&&time>toastGap&&state==='play'){const q=toastQ.shift();showToast('note',q[0],q[1]);}
   if(state==='play'&&time-lastSave>15)saveGame();
+  feelTick();
   if(time>hero.blinkAt+.13)hero.blinkAt=time+2.5+Math.random()*3;
   const vw=view.w/view.zoom,vh=view.h/view.zoom;
   let tx,ty;

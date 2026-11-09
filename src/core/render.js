@@ -8,7 +8,7 @@ const scratch=[];
 function render(){
   if(B){renderBattle();return;}
   const g=ctx,s=view.dpr*view.zoom,vw=view.w/view.zoom,vh=view.h/view.zoom;
-  const cx=Math.round(view.camX*s)/s,cy=Math.round(view.camY*s)/s;
+  const so=state==='title'?[0,0]:shakeOffset(),cx=Math.round((view.camX+so[0])*s)/s,cy=Math.round((view.camY+so[1])*s)/s;
   g.setTransform(1,0,0,1,0,0);g.fillStyle=scene.bg;g.fillRect(0,0,canvas.width,canvas.height);
   if(!SPR||!scene.ground)return;
   g.setTransform(s,0,0,s,-cx*s,-cy*s);
@@ -17,6 +17,7 @@ function render(){
   const sw=Math.min(Math.ceil(vw)+2,scene.W-x0),sh=Math.min(Math.ceil(vh)+2,scene.H-y0);
   const srcW=Math.min(sw*S,scene.ground.width-x0*S),srcH=Math.min(sh*S,scene.ground.height-y0*S);
   if(srcW>0&&srcH>0)g.drawImage(scene.ground,x0*S,y0*S,srcW,srcH,x0,y0,srcW/S,srcH/S);
+  drawGroundFeel(g);
   const t=time,m=30,L=cx-m,T=cy-m,Rr=cx+vw+m,Bt=cy+vh+m;
   if(scene.id==='village'){
     const F=MAP.falaj;
@@ -32,6 +33,7 @@ function render(){
   scratch.push({y:hero.y+.01,x:hero.x,draw:g2=>drawHero(g2,hero.x,hero.y,hero.dir,hero.phase,hero.moving,t,time>hero.blinkAt)});
   scratch.sort((a,b)=>a.y-b.y||a.x-b.x);
   for(const d of scratch)d.draw(g,t);
+  drawAirFeel(g);
   drawNight(g,cx,cy);
   for(const n of NPCS){if(n.scene!==scene.id||target&&target.npc===n&&state==='play')continue;const m=questMark(n);if(m)drawQuestMark(g,n,m,t);else if(n.shop&&met.has(n.id)&&Math.hypot(hero.x-n.x,hero.y-n.y)<150)drawShopMark(g,n,t);}
   if(questStarted&&hasSkill('seeker'))for(const n of NPCS){

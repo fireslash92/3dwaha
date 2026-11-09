@@ -78,11 +78,7 @@ function startEncounter(opts){
   types.forEach(t=>count[t]=(count[t]||0)+1);
   const enemies=types.map(t=>{seen[t]=(seen[t]||0)+1;return makeEnemy(t,count[t]>1?'أبجد'[seen[t]-1]:'');});
   SFX.play(opts.boss?'bossIntro':'encounter');
-  fadeEl.classList.add('white','on');
-  setTimeout(()=>{fadeEl.classList.remove('on');},140);
-  setTimeout(()=>{fadeEl.classList.add('on');},280);
-  setTimeout(()=>{fadeEl.classList.remove('white');},420);
-  setTimeout(()=>{
+  startTransition(!!opts.boss,()=>{
     B={enemies,bossType:opts.boss?types[0]:null,st:{hero:{poison:0,sleep:0},aisha:{poison:0,sleep:0}},money:0,pop:[],fx:[],m:{hero:{act:null,actT:-9,hitT:-9,guard:false},aisha:{act:null,actT:-9,hitT:-9,guard:false}},palm:0,weave:0,
        busy:true,mode:'main',actor:'hero',cmds:{},pending:null,ended:false,xp:0,drops:[],bg:null,result:null,boss:!!opts.boss,round:0};
     layoutEnemies();
@@ -100,7 +96,7 @@ function startEncounter(opts){
       if(P.flags.aisha&&!P.flags.tut3){P.flags.tut3=1;await say('تختار أمر ناصر ثم أمر عائشة، ثم تبدأ الجولة.',2600);}
       startTurn();
     })();
-  },620);
+  });
 }
 async function say(text,ms=900){bMsg.textContent=text;bMsg.classList.add('show');await wait(OPT.bspeed==='fast'&&ms<2000?ms*.55:ms);}
 function popup(x,y,txt,col){B.pop.push({x,y,txt,col,t0:time});}
@@ -219,13 +215,14 @@ async function strike(id,e,mult,label,critBonus=0){
   if(Math.random()>hitChance){SFX.play('miss');popup(e.x,eTop(e),'خطأ','#e9dcc5');await say(`${who}… لكن الضربة أخطأت ${e.name}.`,700);return;}
   const crit=Math.random()<.05+mStat(id,'luk')*.006+critBonus;
   const dmg=rollDmg((mStat(id,'atk')*2-eDef(e))*mult*(crit?1.6:1)*(e.veil>0?.5:1)*elemMult(e,'phys'));
-  e.hp-=dmg;e.hitT=time;SFX.play(crit?'crit':'hit');fx('slash',e.x,eMid(e));popup(e.x,eTop(e),AR(dmg),crit?'#ffd36b':'#ffffff');
+  e.hp-=dmg;e.hitT=time;SFX.play(crit?'crit':'hit');fx('slash',e.x,eMid(e),{big:crit});popup(e.x,eTop(e),AR(dmg),crit?'#ffd36b':'#ffffff');
+  if(crit){shake(7,.32);buzz(35);await hitStop(95);}else{shake(2.5,.14);await hitStop(55);}
   if(id==='hero')P.gauge=Math.min(100,(P.gauge||0)+6);
   await say(`${crit?'ضربة قاضية! ':''}${who} — ${e.name} يتلقى ${AR(dmg)} ضررًا.`,820);
   await killCheck(e);
 }
 async function magicHit(e,base,kind){
-  const dmg=rollDmg((base-eDef(e)*.3)*(e.veil>0?.5:1)*elemMult(e,kind));e.hp-=dmg;e.hitT=time;fx(kind,e.x,eMid(e));popup(e.x,eTop(e),AR(dmg),'#ffb36b');
+  const dmg=rollDmg((base-eDef(e)*.3)*(e.veil>0?.5:1)*elemMult(e,kind));shake(3,.2);e.hp-=dmg;e.hitT=time;fx(kind,e.x,eMid(e));popup(e.x,eTop(e),AR(dmg),'#ffb36b');
   P.gauge=Math.min(100,(P.gauge||0)+4);return dmg;
 }
 async function killCheck(e){
@@ -234,7 +231,8 @@ async function killCheck(e){
   if(e.d.drop&&Math.random()<e.d.drop[1])B.drops.push(e.d.drop[0]);
   if(e.d.mat&&Math.random()<e.d.mat[1]+stat('luk')*.005)B.drops.push(e.d.mat[0]);
   B.money+=e.d.gold||0;P.kills[e.type]=(P.kills[e.type]||0)+1;
-  if(e.d.boss){fx('flash',0,0);await say(e.type==='golem'?'يتهاوى العملاق كومة من الطوب والغبار…':e.type==='serpent'?'تغوص الحيّة في الماء ولا تعود…':'ينطفئ وهج الحارس ويتلاشى في الهواء…',1400);for(const m of aliveEnemies()){m.alive=false;m.dieT=time;}}
+  if(!e.d.boss)fx('burst',e.x,eMid(e));
+  if(e.d.boss){fx('flash',0,0);B.focus={x:e.x,y:eMid(e),t0:time};shake(14,.9);buzz([60,40,140]);await say(e.type==='golem'?'يتهاوى العملاق كومة من الطوب والغبار…':e.type==='serpent'?'تغوص الحيّة في الماء ولا تعود…':'ينطفئ وهج الحارس ويتلاشى في الهواء…',1400);for(const m of aliveEnemies()){m.alive=false;m.dieT=time;}}
   else await say(`هُزم ${e.name}.`,650);
 }
 function healPop(id,amt,col){const p=mPos(id);popup(p.x,p.y-(id==='hero'?86:72),'+'+AR(amt),col||'#7be08a');fx('heal',p.x,p.y-24);}
@@ -268,7 +266,7 @@ async function heroAction(cmd){
     return;
   }
   if(cmd.kind==='special'){
-    P.gauge=0;anim('hero','cast');SFX.play('special');fx('flash',0,0);await say(`${SPECIAL.name}!`,600);
+    P.gauge=0;anim('hero','cast');SFX.play('special');fx('flash',0,0);shake(12,.65);buzz([40,30,80]);await say(`${SPECIAL.name}!`,600);
     for(const e of aliveEnemies()){const dmg=rollDmg((stat('atk')*3+stat('wis')-eDef(e)*.5)*(e.veil>0?.6:1));e.hp-=dmg;e.hitT=time;fx('slash',e.x,eMid(e),{big:true});popup(e.x,eTop(e),AR(dmg),'#ffd36b');}
     await wait(700);for(const e of B.enemies)await killCheck(e);return;
   }
@@ -295,7 +293,7 @@ async function allyAction(cmd){
   if(s.id==='mend'){SFX.play('heal');for(const id of members().filter(alive)){const b=mHP(id);setHP(id,b+w*1.8+10);healPop(id,mHP(id)-b);}await say('نسمة الجماعة تعيد إلى الفريق صحته.',950);}
 }
 function pickTarget(){const ms=members().filter(alive);if(ms.length<2)return ms[0];return Math.random()<.55?'hero':'aisha';}
-function hurt(id,dmg){SFX.play('hurt');if(B.st[id].sleep>0){B.st[id].sleep=0;}setHP(id,mHP(id)-dmg);B.m[id].hitT=time;const p=mPos(id);popup(p.x,p.y-(id==='hero'?86:72),AR(dmg),'#ff8a7a');if(id==='hero')P.gauge=Math.min(100,(P.gauge||0)+dmg*.8);renderParty();}
+function hurt(id,dmg){SFX.play('hurt');shake(dmg>=mStat(id,'hp')*.18?6:3,.24);buzz(dmg>=mStat(id,'hp')*.18?45:20);if(B.st[id].sleep>0){B.st[id].sleep=0;}setHP(id,mHP(id)-dmg);B.m[id].hitT=time;const p=mPos(id);popup(p.x,p.y-(id==='hero'?86:72),AR(dmg),'#ff8a7a');if(id==='hero')P.gauge=Math.min(100,(P.gauge||0)+dmg*.8);renderParty();}
 async function fallenCheck(id){if(!alive(id))await say(`${id==='hero'?'سقط ناصر!':'سقطت عائشة!'}`,900);}
 async function enemyAction(e){
   if(e.type==='serpent')return serpentAction(e);
@@ -332,7 +330,7 @@ async function serpentAction(e){
   const ms=members().filter(alive);if(!ms.length)return;
   const r=Math.random();
   if(r<(e.enraged?.36:.26)){
-    SFX.play('water');fx('wave',0,0);await wait(320);
+    SFX.play('water');fx('wave',0,0);shake(5,.45);await wait(320);
     for(const id of ms){let dmg=rollDmg((e.d.mag*1.1-mStat(id,'wis')*.4)*pw);if(B.m[id].guard)dmg=Math.ceil(dmg/2);hurt(id,dmg);}
     await say('سيل العين يجرف الفريق كله!',950);for(const id of ms)await fallenCheck(id);return;
   }
@@ -363,7 +361,7 @@ async function bossAction(e){
   }
   if(!e.veil&&e.turn>1&&Math.random()<.18){e.veil=2;SFX.play('shield');await say('حارس النور يحيط نفسه بستار من الضوء، فتضعف ضرباتكم.',1200);return;}
   if(Math.random()<(e.enraged?.45:.3)){
-    SFX.play('eMagic');fx('glare',e.x,e.y-80);await wait(380);
+    SFX.play('eMagic');fx('glare',e.x,e.y-80);shake(4,.35);await wait(380);
     const was=members().filter(alive);
     for(const id of was){let dmg=rollDmg((e.d.mag*1.15-mStat(id,'wis')*.45)*pw);if(B.m[id].guard)dmg=Math.ceil(dmg/2);hurt(id,dmg);}
     await say('وهج عظيم يضرب الفريق كله!',950);
@@ -442,12 +440,13 @@ function battleBackdrop(){
 /* enemy art (stage units, anchor at feet, facing right toward the hero) */
 function drawEnemy(g,e,t){
   const age=e.dieT!=null?(time-e.dieT):0;if(e.dieT!=null&&age>.6)return;
-  const hit=time-e.hitT<.35,act=time-e.actT<.5;
-  g.save();g.translate(e.x+(act?Math.sin(Math.min(1,(time-e.actT)/.5)*Math.PI)*22:0)+(hit?Math.sin((time-e.hitT)*60)*3:0),e.y);
+  const hit=time-e.hitT<.35,act=time-e.actT<.5,kb=hit?Math.max(0,1-(time-e.hitT)/.25)*(e.d.boss?4:9):0;
+  g.save();g.translate(e.x+(act?Math.sin(Math.min(1,(time-e.actT)/.5)*Math.PI)*22:0)+(hit?Math.sin((time-e.hitT)*60)*3:0)-kb,e.y);
   if(e.dieT!=null){g.globalAlpha=1-age/.6;g.translate(0,age*20);}
   else if(hit&&Math.floor((time-e.hitT)*20)%2)g.globalAlpha=.45;
   g.fillStyle='rgba(0,0,0,.3)';ell(g,0,0,e.d.boss?50:e.d.fly?14:26,e.d.boss?9:5);g.fill();
   if(e.type==='serpent')drawSerpent(g,t,e);else if(e.type==='golem')drawGolem(g,t,e);else if(e.d.boss)drawGuardian(g,t,e);else ({lizard:drawLizard,bat:drawBat,wolf:drawWolf,wisp:drawWisp,scorpion:drawScorpion,viper:drawViper,soldier:drawSoldier,spider:drawSpider})[e.type](g,t+e.ph);
+  if(e.dieT==null&&time-e.hitT<.1){g.globalCompositeOperation='lighter';g.fillStyle='rgba(255,250,235,.4)';ell(g,0,e.d.boss?-80:-22,e.d.boss?62:24,e.d.boss?72:20);g.fill();g.globalCompositeOperation='source-over';}
   g.restore();
 }
 function drawLizard(g,t){
@@ -535,9 +534,10 @@ function drawMember(g,id,t){
   if(B&&!B.busy&&!B.ended&&B.actor===id&&members().length>1){g.fillStyle='#ffd88a';const by=p.y-(id==='hero'?82:70)+Math.sin(t*6)*2;poly(g,[p.x-5,by-6,p.x+5,by-6,p.x,by]);}
 }
 function renderBattle(){
-  const g=ctx,d=view.dpr,t=time,{sc,ox,oy,SW}=stageDims();
-  g.setTransform(1,0,0,1,0,0);g.drawImage(battleBackdrop(),0,0);
-  g.setTransform(d*sc,0,0,d*sc,d*ox,d*oy);
+  const g=ctx,d=view.dpr,t=animTime(),{sc,ox,oy,SW}=stageDims(),so=shakeOffset();
+  g.setTransform(1,0,0,1,0,0);g.drawImage(battleBackdrop(),-10*d+so[0]*d*.6,-10*d+so[1]*d*.6,canvas.width+20*d,canvas.height+20*d);
+  let z=1,fx0=0,fy0=0;if(B.focus){const q=(time-B.focus.t0)/1.7;if(q<1){z=1+.38*Math.sin(Math.min(1,q*1.6)*Math.PI/2)*(q<.7?1:1-(q-.7)/.3);fx0=B.focus.x;fy0=B.focus.y;}}
+  g.setTransform(d*sc*z,0,0,d*sc*z,d*(ox+so[0])+d*sc*fx0*(1-z),d*(oy+so[1])+d*sc*fy0*(1-z));
   const items=B.enemies.map(e=>({y:e.y,f:()=>drawEnemy(g,e,t)}));
   members().forEach(id=>{const p=mPos(id);items.push({y:p.y,f:()=>drawMember(g,id,t)});});
   items.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
@@ -559,13 +559,14 @@ function renderBattle(){
       for(let i=0;i<9;i++){const a=-.55+i*.14;g.beginPath();g.moveTo(f.x,f.y);g.lineTo(f.x+Math.cos(a)*SW,f.y+Math.sin(a)*SW);g.lineTo(f.x+Math.cos(a+.05)*SW,f.y+Math.sin(a+.05)*SW);g.closePath();g.fill();}
       g.restore();
     }
+    if(f.kind==='burst'&&k<.6){for(let i=0;i<12;i++){const ang=i/12*TAU+f.x,r=8+k*48;g.fillStyle=`rgba(255,230,180,${1-k/.6})`;circ(g,f.x+Math.cos(ang)*r,f.y+Math.sin(ang)*r*.6,2.6*(1-k/.6)+.6);}}
     if(f.kind==='wave'&&k<.9){g.strokeStyle=`rgba(140,210,240,${.85*(1-k/.9)})`;g.lineWidth=3;for(let i=0;i<5;i++){const xx=60+k*SW*.8-i*18,yy=180+i*14;g.beginPath();g.arc(xx,yy,22,-1.2,1.2);g.stroke();}}
     if(f.kind==='sand'&&k<.9){g.strokeStyle=`rgba(230,200,140,${.8*(1-k/.9)})`;g.lineWidth=2;g.beginPath();for(let i=0;i<14;i++){const yy=150+i*8,xx=(SW*.6)-k*SW*.7-(i%3)*20;g.moveTo(xx,yy);g.lineTo(xx-40,yy+4);}g.stroke();
       for(let i=0;i<20;i++){g.fillStyle=`rgba(220,190,130,${.7*(1-k)})`;circ(g,(i*37+k*-300)%300+60,170+(i*13)%80,1.5);}}
   }
   B.pop=B.pop.filter(p=>time-p.t0<1);
   g.textAlign='center';g.textBaseline='middle';
-  for(const p of B.pop){const k=time-p.t0;g.globalAlpha=Math.min(1,(1-k)*2);g.font='800 15px system-ui,-apple-system,"SF Arabic",sans-serif';g.lineWidth=3;g.strokeStyle='rgba(30,15,5,.85)';g.strokeText(p.txt,p.x,p.y-k*22);g.fillStyle=p.col;g.fillText(p.txt,p.x,p.y-k*22);}
+  for(const p of B.pop){const k=time-p.t0,big=p.col==='#ffd36b',sz=(big?20:15)*(k<.12?1.75-k/.12*.75:1);g.globalAlpha=Math.min(1,(1-k)*2);g.font=`800 ${sz}px system-ui,-apple-system,"SF Arabic",sans-serif`;g.lineWidth=3;g.strokeStyle='rgba(30,15,5,.85)';g.strokeText(p.txt,p.x,p.y-k*22);g.fillStyle=p.col;g.fillText(p.txt,p.x,p.y-k*22);}
   g.globalAlpha=1;
   const fl=B.fx.find(q=>q.kind==='flash'&&time-q.t0<.4);
   if(fl){g.setTransform(1,0,0,1,0,0);g.fillStyle=`rgba(255,240,200,${.8*(1-(time-fl.t0)/.4)})`;g.fillRect(0,0,canvas.width,canvas.height);}

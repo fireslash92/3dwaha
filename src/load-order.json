@@ -12,6 +12,7 @@
  "src/story/people.js",
  "src/rpg/data.js",
  "src/core/state.js",
+ "src/fx/feel.js",
  "src/core/view.js",
  "src/core/input.js",
  "src/story/flow.js",

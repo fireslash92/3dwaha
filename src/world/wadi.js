@@ -119,7 +119,7 @@ function openGate(i){
   }
   if(gateSeq.length===SOLUTION.length){
     P.flags.gates=1;gateSeq=[];
-    setTimeout(()=>{SFX.play('water');SFX.play('bossRoar');notify('اندفع الماء في الفلج!<small>لكن شيئًا ضخمًا يتحرك في عين الفلج…</small>',3.6);saveGame();},500);
+    setTimeout(()=>{shake(6,.8);buzz([40,40,60]);SFX.play('water');SFX.play('bossRoar');notify('اندفع الماء في الفلج!<small>لكن شيئًا ضخمًا يتحرك في عين الفلج…</small>',3.6);saveGame();},500);
   }else notify(`فتحت البوابة (${AR(gateSeq.length)} من ٣)`,1.6);
 }
 function enterWadi(){P.flags.wadi=1;}

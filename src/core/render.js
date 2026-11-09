@@ -35,6 +35,7 @@ function render(){
   scratch.push({y:hero.y+.01,x:hero.x,draw:g2=>drawHero(g2,hero.x,hero.y,hero.dir,hero.phase,hero.moving,t,time>hero.blinkAt)});
   scratch.sort((a,b)=>a.y-b.y||a.x-b.x);
   for(const d of scratch)d.draw(g,t);
+  drawFishWorld(g,t);
   drawCloudShadows(g,L,T,Rr,Bt);
   drawBunting(g,t);
   drawAirFeel(g);
@@ -76,6 +77,7 @@ function render(){
   g.setTransform(1,0,0,1,0,0);g.scale(view.dpr,view.dpr);
   g.fillStyle=view.warm;g.fillRect(0,0,view.w,view.h);
   g.fillStyle=view.vig;g.fillRect(0,0,view.w,view.h);
+  drawFishUI(g);
 }
 function drawStar(g,x,y,r){g.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr2=i%2?r*.45:r;g.lineTo(x+Math.cos(a)*rr2,y+Math.sin(a)*rr2);}g.closePath();g.fill();}
 function drawBubble(g,tg,t){
@@ -86,6 +88,7 @@ function drawBubble(g,tg,t){
   g.strokeStyle='#6b4a2b';g.beginPath();g.moveTo(x-3.5,by+6);g.lineTo(x,by+10);g.lineTo(x+3.5,by+6);g.stroke();
   g.fillStyle='#6b4a2b';
   if(tg.kind==='npc'){for(let i=0;i<3;i++)circ(g,x-6+i*6,by-2,1.5+.5*Math.max(0,Math.sin(t*6-i*.9)));}
+  else if(tg.kind==='fish'){g.strokeStyle='#2f7896';g.lineWidth=1.6;g.beginPath();g.moveTo(x+3,by-8);g.lineTo(x+3,by);g.arc(x,by,3,0,Math.PI);g.stroke();g.fillStyle='#d8432e';circ(g,x+3,by-8,1.6);}
   else if(tg.kind==='spring'){g.fillStyle='#2f7896';g.beginPath();g.moveTo(x,by-8);g.quadraticCurveTo(x+5,by-1,x+4,by+1);g.arc(x,by+1,4,0,Math.PI);g.quadraticCurveTo(x-5,by-1,x,by-8);g.fill();}
   else{g.fillStyle='#a9472a';const s=tg.kind==='door'?1:-1,c=by-2;poly(g,[x,c-5*s,x+5,c+.5*s,x+2,c+.5*s,x+2,c+5*s,x-2,c+5*s,x-2,c+.5*s,x-5,c+.5*s]);}
 }

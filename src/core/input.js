@@ -36,8 +36,8 @@ zone.addEventListener('pointermove',e=>{if(stick.active&&e.pointerId===stick.id)
 ['pointerup','pointercancel','lostpointercapture'].forEach(n=>zone.addEventListener(n,e=>{if(e.pointerId===stick.id)releaseStick();}));
 function resetInput(){if(stick.active||stick.dx||stick.dy)releaseStick();keys.up=keys.down=keys.left=keys.right=false;hero.moving=false;}
 
-actBtn.addEventListener('pointerdown',e=>{e.preventDefault();actBtn.classList.add('down');act();});
-['pointerup','pointercancel','pointerleave'].forEach(n=>actBtn.addEventListener(n,()=>actBtn.classList.remove('down')));
+actBtn.addEventListener('pointerdown',e=>{e.preventDefault();actBtn.classList.add('down');fishHold=true;act();});
+['pointerup','pointercancel','pointerleave'].forEach(n=>actBtn.addEventListener(n,()=>{actBtn.classList.remove('down');fishHold=false;}));
 let nextArmed=false;
 dlgNext.addEventListener('pointerdown',e=>{e.preventDefault();nextArmed=true;});
 dlgNext.addEventListener('pointerup',e=>{e.preventDefault();if(nextArmed&&state==='dialog')advance();nextArmed=false;});
@@ -49,16 +49,17 @@ const KEYMAP={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'lef
 window.addEventListener('keydown',e=>{
   lastInputKeyboard=true;
   if(state==='shop'&&(e.code==='Escape'||e.code==='KeyM')){e.preventDefault();closeShop();return;}
+  if(state==='fish'&&(e.code==='Escape'||e.code==='KeyM')){e.preventDefault();endFishing('أعدت السنارة',1.4);return;}
   if(e.code==='Escape'||e.code==='KeyM'){e.preventDefault();if(state==='menu')closeMenu();else if(state==='play')openMenu();return;}
   if(state==='menu'||state==='battle'||state==='shop')return;
   const k=KEYMAP[e.code];
   if(k){e.preventDefault();if(state==='play')keys[k]=true;return;}
   if(e.code==='KeyE'||e.code==='Space'||e.code==='Enter'||e.code==='NumpadEnter'){
-    e.preventDefault();if(e.repeat)return;
+    e.preventDefault();fishHold=true;if(e.repeat)return;
     if(state==='title')startGame();else if(state==='chapter')closeChapter();else act();
   }
 });
-window.addEventListener('keyup',e=>{const k=KEYMAP[e.code];if(k)keys[k]=false;});
+window.addEventListener('keyup',e=>{const k=KEYMAP[e.code];if(k)keys[k]=false;if(e.code==='KeyE'||e.code==='Space'||e.code==='Enter'||e.code==='NumpadEnter')fishHold=false;});
 window.addEventListener('blur',resetInput);
 window.addEventListener('pagehide',()=>{resetInput();saveGame();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){resetInput();saveGame();SFX.suspend();}else{last=performance.now();SFX.unlock();}});

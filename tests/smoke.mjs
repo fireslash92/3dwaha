@@ -58,6 +58,11 @@ try{
     ks.forEach(k=>G.keys[k]=false);return worst;});
   ok('التصادم في القرية',collisions<.5,`أقصى تداخل ${collisions.toFixed(2)}`);
 
+  // fishing: buy nothing, just hand over a rod and let a simple bot reel in
+  const fished=await page.evaluate(async()=>{const G=__game,F=G.MAP.falaj;G.P.inv.rod=1;G.hero.x=F.x+F.w+14;G.hero.y=F.y+F.h/2;G.step(1/60,2);G.act();
+    for(let k=0;k<1200&&G.state==='fish';k++){const f=G.FG;if(f&&f.phase==='bite')G.act();if(f&&f.phase==='reel')G.setHold(f.f>f.z+f.zw*.5);await new Promise(r=>setTimeout(r,16));}
+    G.setHold(false);return Object.keys(G.P.fishLog||{}).length>0;});
+  ok('صيد سمكة من الفلج',fished);
   await page.evaluate(()=>{const G=__game;G.OPT.bspeed='fast';G.hero.x=576;G.hero.y=110;G.keys.up=true;G.step(1/60,10);G.keys.up=false;});await page.waitForTimeout(700);
   ok('دخول ممر الغابة',await page.evaluate(()=>__game.scene)==='forest');
   await page.evaluate(()=>{__game.hero.y=900;__game.startEncounter({types:['lizard']});});await page.waitForTimeout(1600);

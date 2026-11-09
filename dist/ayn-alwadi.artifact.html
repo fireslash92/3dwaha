@@ -1835,8 +1835,8 @@ zone.addEventListener('pointermove',e=>{if(stick.active&&e.pointerId===stick.id)
 ['pointerup','pointercancel','lostpointercapture'].forEach(n=>zone.addEventListener(n,e=>{if(e.pointerId===stick.id)releaseStick();}));
 function resetInput(){if(stick.active||stick.dx||stick.dy)releaseStick();keys.up=keys.down=keys.left=keys.right=false;hero.moving=false;}
 
-actBtn.addEventListener('pointerdown',e=>{e.preventDefault();actBtn.classList.add('down');act();});
-['pointerup','pointercancel','pointerleave'].forEach(n=>actBtn.addEventListener(n,()=>actBtn.classList.remove('down')));
+actBtn.addEventListener('pointerdown',e=>{e.preventDefault();actBtn.classList.add('down');fishHold=true;act();});
+['pointerup','pointercancel','pointerleave'].forEach(n=>actBtn.addEventListener(n,()=>{actBtn.classList.remove('down');fishHold=false;}));
 let nextArmed=false;
 dlgNext.addEventListener('pointerdown',e=>{e.preventDefault();nextArmed=true;});
 dlgNext.addEventListener('pointerup',e=>{e.preventDefault();if(nextArmed&&state==='dialog')advance();nextArmed=false;});
@@ -1848,16 +1848,17 @@ const KEYMAP={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'lef
 window.addEventListener('keydown',e=>{
   lastInputKeyboard=true;
   if(state==='shop'&&(e.code==='Escape'||e.code==='KeyM')){e.preventDefault();closeShop();return;}
+  if(state==='fish'&&(e.code==='Escape'||e.code==='KeyM')){e.preventDefault();endFishing('أعدت السنارة',1.4);return;}
   if(e.code==='Escape'||e.code==='KeyM'){e.preventDefault();if(state==='menu')closeMenu();else if(state==='play')openMenu();return;}
   if(state==='menu'||state==='battle'||state==='shop')return;
   const k=KEYMAP[e.code];
   if(k){e.preventDefault();if(state==='play')keys[k]=true;return;}
   if(e.code==='KeyE'||e.code==='Space'||e.code==='Enter'||e.code==='NumpadEnter'){
-    e.preventDefault();if(e.repeat)return;
+    e.preventDefault();fishHold=true;if(e.repeat)return;
     if(state==='title')startGame();else if(state==='chapter')closeChapter();else act();
   }
 });
-window.addEventListener('keyup',e=>{const k=KEYMAP[e.code];if(k)keys[k]=false;});
+window.addEventListener('keyup',e=>{const k=KEYMAP[e.code];if(k)keys[k]=false;if(e.code==='KeyE'||e.code==='Space'||e.code==='Enter'||e.code==='NumpadEnter')fishHold=false;});
 window.addEventListener('blur',resetInput);
 window.addEventListener('pagehide',()=>{resetInput();saveGame();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){resetInput();saveGame();SFX.suspend();}else{last=performance.now();SFX.unlock();}});
@@ -1901,6 +1902,7 @@ function startGame(resume){
 }
 function act(){
   if(state==='dialog'){advance();return;}
+  if(state==='fish'){fishPress();return;}
   if(state!=='play'||talkCooldown>0||!target)return;
   if(target.kind==='npc')openDialog(target.npc);
   else if(target.kind==='door')enterHouse(target.house);
@@ -1908,6 +1910,7 @@ function act(){
   else if(target.kind==='gate'){openGate(target.i);talkCooldown=.5;}
   else if(target.kind==='pot'){smashPot(target.p);talkCooldown=.4;}
   else if(target.kind==='innergate'){tryInnerGate();talkCooldown=.6;}
+  else if(target.kind==='fish')startFishing(target.w);
   else if(target.kind==='pickup'){takePickup(target.p);talkCooldown=.2;}
   else if(target.kind==='spring'){const full=curHP()>=stat('hp')&&curMP()>=stat('mp')&&(!P.flags.aisha||allyHP()>=allyStat('hp')&&allyMP()>=allyStat('mp'));P.hp=null;P.mp=null;P.ally={hp:null,mp:null};SFX.play('water');showToast('note',scene.fort?'شربتم من بئر الحصن<small>عادت إليكم الصحة والطاقة</small>':dryVillage()?'بقي في الحوض قليل من الماء…<small>شربتم فعادت إليكم الصحة والطاقة</small>':full?'ماء النافورة بارد وعذب':'شربت من ماء النافورة<small>عادت إليك صحتك وطاقتك كاملتين</small>',2.6);saveGame();talkCooldown=.5;}
 }
@@ -2096,6 +2099,7 @@ function findTarget(){
   for(const n of NPCS){if(n.scene!==scene.id)continue;const d=Math.hypot(hero.x-n.x,hero.y-n.y);if(d<bd){bd=d;best={kind:'npc',npc:n,x:n.x,y:n.y+(n.look.child?6:0)};}}
   if(best)return best;
   for(const p of PICKUPS)if(p.scene===scene.id&&pickupActive(p)&&Math.hypot(hero.x-p.x,hero.y-p.y)<36)return {kind:'pickup',p,x:p.x,y:p.y-10};
+  {const ft=fishTarget();if(ft)return ft;}
   if(scene.fort)return fortTarget();
   if(scene.forest){if(Math.hypot(hero.x-STONE.x,hero.y-STONE.y)<52)return {kind:'npc',npc:STONE,x:STONE.x,y:STONE.y-6};return null;}
   if(scene.wadi){
@@ -2111,10 +2115,10 @@ function findTarget(){
 }
 function update(dt){
   time+=dt;
-  lifeTick(dt);weatherTick(dt);puddleFeel(dt);
+  lifeTick(dt);weatherTick(dt);puddleFeel(dt);fishTick(dt);achTick(dt);
   for(const n of NPCS)if(n.route&&n.route.length&&n.scene!==scene.id)walkRoute(n,dt);
   if(talkCooldown>0)talkCooldown-=dt;
-  if(state==='play'||state==='dialog')P.clock=(P.clock??540)+dt*DAY_RATE;
+  if(state==='play'||state==='dialog'||state==='fish')P.clock=(P.clock??540)+dt*DAY_RATE;
   for(const n of NPCS)if(n.scene===scene.id)updateNpc(n,dt);
   if(state==='play'){
     const v=inputVector();
@@ -2145,7 +2149,7 @@ function update(dt){
       inForest=inZ;
     }
   }else{hero.moving=false;if(state!=='dialog')target=null;}
-  actBtn.classList.toggle('ready',state==='play'&&!!target);
+  actBtn.classList.toggle('ready',state==='play'&&!!target||state==='fish');
   if(toastKey&&time>toastUntil)hideToast();
   if(!toastKey&&toastQ.length&&time>toastGap&&state==='play'){const q=toastQ.shift();showToast('note',q[0],q[1]);}
   if(state==='play'&&time-lastSave>15)saveGame();
@@ -2204,6 +2208,7 @@ function render(){
   scratch.push({y:hero.y+.01,x:hero.x,draw:g2=>drawHero(g2,hero.x,hero.y,hero.dir,hero.phase,hero.moving,t,time>hero.blinkAt)});
   scratch.sort((a,b)=>a.y-b.y||a.x-b.x);
   for(const d of scratch)d.draw(g,t);
+  drawFishWorld(g,t);
   drawCloudShadows(g,L,T,Rr,Bt);
   drawBunting(g,t);
   drawAirFeel(g);
@@ -2245,6 +2250,7 @@ function render(){
   g.setTransform(1,0,0,1,0,0);g.scale(view.dpr,view.dpr);
   g.fillStyle=view.warm;g.fillRect(0,0,view.w,view.h);
   g.fillStyle=view.vig;g.fillRect(0,0,view.w,view.h);
+  drawFishUI(g);
 }
 function drawStar(g,x,y,r){g.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr2=i%2?r*.45:r;g.lineTo(x+Math.cos(a)*rr2,y+Math.sin(a)*rr2);}g.closePath();g.fill();}
 function drawBubble(g,tg,t){
@@ -2255,6 +2261,7 @@ function drawBubble(g,tg,t){
   g.strokeStyle='#6b4a2b';g.beginPath();g.moveTo(x-3.5,by+6);g.lineTo(x,by+10);g.lineTo(x+3.5,by+6);g.stroke();
   g.fillStyle='#6b4a2b';
   if(tg.kind==='npc'){for(let i=0;i<3;i++)circ(g,x-6+i*6,by-2,1.5+.5*Math.max(0,Math.sin(t*6-i*.9)));}
+  else if(tg.kind==='fish'){g.strokeStyle='#2f7896';g.lineWidth=1.6;g.beginPath();g.moveTo(x+3,by-8);g.lineTo(x+3,by);g.arc(x,by,3,0,Math.PI);g.stroke();g.fillStyle='#d8432e';circ(g,x+3,by-8,1.6);}
   else if(tg.kind==='spring'){g.fillStyle='#2f7896';g.beginPath();g.moveTo(x,by-8);g.quadraticCurveTo(x+5,by-1,x+4,by+1);g.arc(x,by+1,4,0,Math.PI);g.quadraticCurveTo(x-5,by-1,x,by-8);g.fill();}
   else{g.fillStyle='#a9472a';const s=tg.kind==='door'?1:-1,c=by-2;poly(g,[x,c-5*s,x+5,c+.5*s,x+2,c+.5*s,x+2,c+5*s,x-2,c+5*s,x-2,c+.5*s,x-5,c+.5*s]);}
 }
@@ -3054,6 +3061,12 @@ const SFX=(()=>{
     meow:o=>{const v=.04*(o.vol??1);tone({f:620,f2:920,type:'triangle',lp:2600,a:.03,dur:.18,v,pan:o.pan,slide:.15});tone({f:920,f2:520,type:'triangle',lp:2600,dur:.22,v,d:.17,pan:o.pan});},
     flap:o=>{const v=.06*(o.vol??1);for(let i=0;i<7;i++)noise({type:'bandpass',f:900+Math.random()*700,q:1.2,dur:.035,v,d:i*.05,pan:o.pan});},
     thunder:o=>{const v=o.vol??1;noise({type:'highpass',f:1800,dur:.12,v:.08*v});noise({type:'lowpass',f:420,f2:90,a:.05,dur:2.6,v:.32*v,pan:Math.random()-.5});noise({type:'lowpass',f:200,a:.4,dur:2.2,v:.22*v,d:.5});tone({f:55,f2:38,a:.1,dur:1.6,v:.12*v});},
+    cast:()=>{noise({type:'bandpass',f:900,f2:3200,q:1.2,dur:.3,v:.07});tone({f:1800,f2:900,type:'triangle',dur:.2,v:.025,d:.05});},
+    plop:()=>{tone({f:520,f2:180,dur:.09,v:.12});noise({type:'bandpass',f:900,q:1.5,dur:.08,v:.05,d:.02});},
+    nibble:()=>{tone({f:700,f2:400,dur:.04,v:.06});},
+    bite:()=>{noise({type:'bandpass',f:1200,f2:500,q:1.2,dur:.18,v:.12});tone({f:1318,type:'triangle',dur:.12,v:.08,d:.02});tone({f:1760,type:'triangle',dur:.16,v:.07,d:.09});},
+    hook:()=>{tone({f:300,f2:900,type:'triangle',dur:.12,v:.08});noise({type:'highpass',f:2500,dur:.06,v:.04});},
+    reel:()=>noise({type:'bandpass',f:3400,q:4,dur:.018,v:.035}),
     splash:()=>{noise({type:'bandpass',f:1300,f2:600,q:1.2,dur:.14,v:.09});for(let i=0;i<3;i++)tone({f:700+Math.random()*500,f2:1400,dur:.04,v:.025,d:.03+i*.04});},
     grunt:o=>{const v=.06*(o.vol??1);tone({f:110,f2:78,type:'sawtooth',lp:520,a:.04,dur:.45,v,pan:o.pan});noise({type:'lowpass',f:500,a:.04,dur:.3,v:v*.6,pan:o.pan});},
     defeat:()=>arp([392,349,311,262],.28,{type:'triangle',lp:1600,dur:.5,v:.08}),
@@ -3180,7 +3193,7 @@ const SFX=(()=>{
   function tick(dt){
     if(!ready())return;
     try{musicTick();}catch(err){(window.__sfxErr=window.__sfxErr||[]).push('music: '+err.message);}
-    const on=OPT.ambient!=='off'&&(state==='play'||state==='menu'||state==='dialog');
+    const on=OPT.ambient!=='off'&&(state==='play'||state==='menu'||state==='dialog'||state==='fish');
     if(!fountain){
       const src=ac.createBufferSource();src.buffer=noiseBuf;src.loop=true;const f1=ac.createBiquadFilter();f1.type='bandpass';f1.frequency.value=1100;f1.Q.value=.6;const f2=ac.createBiquadFilter();f2.type='lowpass';f2.frequency.value=2800;
       const g=ac.createGain();g.gain.value=0;src.connect(f1);f1.connect(f2);f2.connect(g);g.connect(ambBus);src.start();fountain=g;
@@ -3269,7 +3282,7 @@ function renderShop(reset){
   const row=(id,right,extra)=>{const it=ITEMS[id];const own=P.inv[id]||0;return `<div class="row">${icon(it.icon,it.col)}<span class="grow"><span class="val">${it.name}${own?` <span class="chip">تملك ${AR(own)}</span>`:''}</span><span class="lbl">${it.desc}</span>${it.stats?`<span class="chips">${chipsOf(it.stats)}</span>`:''}${extra||''}</span>${right}</div>`;};
   if(shopTab==='buy'){
     html+=`<div class="list">${SHOP[shopId].stock.map(id=>{const it=ITEMS[id],ok=P.money>=it.price;
-      return row(id,`<button type="button" class="btn" data-buy="${id}"${ok?'':' disabled'}>${baisa(it.price)}</button>`);}).join('')}</div>`;
+      return row(id,it.key&&P.inv[id]?'<span class="tag-eq">تملكها</span>':`<button type="button" class="btn" data-buy="${id}"${ok?'':' disabled'}>${baisa(it.price)}</button>`);}).join('')}</div>`;
   }else if(shopTab==='sell'){
     const ids=Object.keys(P.inv).filter(id=>ITEMS[id]&&P.inv[id]>0&&!ITEMS[id].key&&sellValue(id)>0&&P.inv[id]>equippedCount(id));
     html+=ids.length?`<div class="list">${ids.map(id=>row(id,`<button type="button" class="btn ghost" data-sell="${id}">بيع بـ${baisa(sellValue(id))}</button>`)).join('')}</div>`
@@ -3288,11 +3301,11 @@ shopEl.addEventListener('click',e=>{
   const d=b.dataset;
   if(b.id==='shopClose'){closeShop();return;}
   if(d.stab){SFX.play('tab');shopTab=d.stab;shopMsg='';renderShop(true);return;}
-  if(d.buy){const it=ITEMS[d.buy];if(P.money<it.price){SFX.play('error');return;}P.money-=it.price;P.inv[d.buy]=(P.inv[d.buy]||0)+1;SFX.play('coin');shopMsg=`اشتريت ${it.name}.${it.slot?' تجده في القائمة ← العتاد.':''}`;renderShop();saveGame();return;}
+  if(d.buy){const it=ITEMS[d.buy];if(P.money<it.price){SFX.play('error');return;}P.money-=it.price;P.inv[d.buy]=(P.inv[d.buy]||0)+1;if(shopId==='peddler')achUnlock('peddler');SFX.play('coin');shopMsg=`اشتريت ${it.name}.${it.slot?' تجده في القائمة ← العتاد.':''}`;renderShop();saveGame();return;}
   if(d.sell){const v=sellValue(d.sell);P.inv[d.sell]--;P.money+=v;SFX.play('coin');shopMsg=`بعت ${ITEMS[d.sell].name} بـ${baisa(v)}.`;renderShop();saveGame();return;}
   if(d.craft){const r=RECIPES.find(q=>q.id===d.craft);if(!r)return;
     if(P.money<r.cost||!Object.keys(r.need).every(m=>(P.inv[m]||0)>=r.need[m])){SFX.play('error');return;}
-    P.money-=r.cost;Object.keys(r.need).forEach(m=>P.inv[m]-=r.need[m]);P.inv[r.id]=1;SFX.play('anvil');
+    P.money-=r.cost;Object.keys(r.need).forEach(m=>P.inv[m]-=r.need[m]);P.inv[r.id]=1;SFX.play('anvil');achUnlock('craft');
     shopMsg=`صاغ لك راشد ${ITEMS[r.id].name}. البسه من القائمة ← العتاد.`;$('menuDot').hidden=false;renderShop();saveGame();}
 });
 
@@ -4245,7 +4258,7 @@ function puddleFeel(dt){
   splashCool-=dt;
   const list=PUDDLES[scene.id];if(!list||WX.wet<.25||!hero.moving||splashCool>0)return;
   for(const p of list){const dx=(hero.x-p.x)/(p.rx+3),dy=(hero.y-p.y)/(p.ry+3);
-    if(dx*dx+dy*dy<1){splashCool=.3;RIPPLES.push({x:hero.x,y:hero.y,rx:1,t0:time,sc:scene.id});SFX.play('splash');
+    if(dx*dx+dy*dy<1){splashCool=.3;achUnlock('splash');RIPPLES.push({x:hero.x,y:hero.y,rx:1,t0:time,sc:scene.id});SFX.play('splash');
       if(fxOn())for(let i=0;i<4;i++)PUFFS.push({x:hero.x,y:hero.y-1,vx:(Math.random()-.5)*30,vy:-14-Math.random()*10,r:1.2,t0:time,life:.35,col:'200,225,240'});break;}}
 }
 function drawPuddles(g,L,T,R2,B2){
@@ -4394,6 +4407,142 @@ function drawBossAura(g){
   g.save();g.setTransform(1,0,0,1,0,0);
   const gr=g.createRadialGradient(W/2,H*.45,Math.min(W,H)*.25,W/2,H*.45,Math.hypot(W,H)*.6);
   gr.addColorStop(0,`rgba(${col},0)`);gr.addColorStop(1,`rgba(${col},${.16+.1*k})`);g.fillStyle=gr;g.fillRect(0,0,W,H);
+  g.restore();
+}
+
+// ---- src/world/fishing.js ----
+// صيد السمك في الفلج وعين الوادي: رمي الخيط، انتظار العضّة، ثم شدّ الخيط وإبقاء السمكة في المنطقة الخضراء
+
+/* =========================================================
+   FISH & ROD
+   ========================================================= */
+const FISH={
+  minnow:{name:'سمكة الفلج الصغيرة',where:'village',w:62,len:[6,12],spd:.45,jump:.9,col:'#9fb7a8',price:30,heal:15},
+  garra:{name:'سمكة الصدّ',where:'village',w:34,len:[10,22],spd:.75,jump:.7,col:'#7d8f6a',price:70,heal:30},
+  aynfish:{name:'سمكة العين',where:'wadi',w:58,len:[18,34],spd:.85,jump:.65,col:'#7aa6b8',price:110,heal:45},
+  bigsad:{name:'صدّ الوادي الكبير',where:'wadi',w:36,len:[28,46],spd:1.15,jump:.5,col:'#6f7d5c',price:180,heal:70},
+  golden:{name:'السمكة الذهبية',where:'any',w:4,len:[20,31],spd:1.5,jump:.38,col:'#e8b33c',price:800,heal:120},
+};
+const FISH_ORDER=['minnow','garra','aynfish','bigsad','golden'];
+for(const id of FISH_ORDER){const f=FISH[id];ITEMS['fish_'+id]={name:f.name,use:'hp',amount:f.heal,icon:'fish',col:f.col,price:f.price,desc:`صيد طازج. يُشوى ويؤكل فيعيد ${AR(f.heal)} من الصحة.`};}
+ITEMS.rod={name:'سنارة الصيد',key:true,icon:'rod',col:'#8a5a2b',price:80,desc:'قصبة من النخيل وخيط متين. اقترب من ماء الفلج أو عين الوادي واضغط «تفاعل».'};
+SHOP.saeed.stock.unshift('rod');
+
+/* where the hero can fish (null if nowhere) */
+function fishWater(){
+  if(scene.id==='village'&&!dryVillage()){const L=MAP.falaj;if(hero.x>L.x-30&&hero.x<L.x+L.w+30&&hero.y>L.y+6&&hero.y<L.y+L.h-6)return {x:L.x+L.w/2,y:hero.y-6,place:'village'};}
+  if(scene.wadi&&P.flags.gates&&hero.y<228&&hero.x<WADI.spring.x-90)return {x:clamp(hero.x,20,WADI.spring.x-60),y:150,place:'wadi'};
+  return null;
+}
+function fishTarget(){const w=fishWater();return w?{kind:'fish',x:w.x,y:w.y+30,w}:null;}
+
+/* =========================================================
+   THE MINI-GAME
+   phases: cast → wait → bite → reel → done
+   ========================================================= */
+let FG=null,fishHold=false;
+function pickFish(place){
+  const h=hourNow(),rare=(WX.rain>.2?2:1)*(h<7||h>17&&h<19.5?1.6:1);
+  const pool=FISH_ORDER.filter(id=>FISH[id].where===place||FISH[id].where==='any').map(id=>[id,FISH[id].w*(id==='golden'?rare:1)]);
+  let r=Math.random()*pool.reduce((s,p)=>s+p[1],0);for(const [id,w] of pool){if((r-=w)<=0)return id;}return pool[0][0];
+}
+function startFishing(w){
+  if(!P.inv.rod){SFX.play('blocked');showToast('note','الماء هنا يعجّ بالسمك<small>لو عندك سنارة لاصطدت. يبيعها سعيد في دكانه</small>',3.4);talkCooldown=.6;return;}
+  resetInput();state='fish';hero.dir=w.x<hero.x-6?'left':w.x>hero.x+6?'right':'up';
+  if(toastKey==='hint'||toastKey==='note')hideToast();
+  FG={phase:'cast',t0:time,w,place:w.place,nib:0,nextNib:0};SFX.play('cast');
+  gameEl.classList.add('fishing');
+}
+function endFishing(msg,dur=2.6){state='play';FG=null;fishHold=false;talkCooldown=.4;gameEl.classList.remove('fishing');if(msg)showToast('note',msg,dur);}
+function fishPress(){ // the interact button while fishing
+  if(!FG)return;
+  if(FG.phase==='wait'){SFX.play('cancel');endFishing('سحبت الخيط قبل أن تعضّ سمكة',1.8);return;}
+  if(FG.phase==='bite'){
+    const id=pickFish(FG.place),f=FISH[id];
+    FG.phase='reel';FG.t0=time;FG.fish=id;FG.f=.5;FG.ft=.5;FG.fv=0;FG.nextJump=0;FG.z=.35;FG.zv=0;FG.zw=id==='golden'?.2:.26;FG.prog=.3;FG.spd=f.spd;FG.jump=f.jump;
+    SFX.play('hook');buzz(25);
+  }
+}
+function fishTick(dt){
+  if(state!=='fish'||!FG)return;
+  const k=time-FG.t0;
+  if(FG.phase==='cast'&&k>.65){FG.phase='wait';FG.t0=time;FG.waitFor=1.8+Math.random()*4.2;FG.nextNib=.6+Math.random()*1.2;SFX.play('plop');}
+  else if(FG.phase==='wait'){
+    if(k>FG.nextNib&&k<FG.waitFor-.5){FG.nib=time;FG.nextNib=k+.9+Math.random()*1.4;SFX.play('nibble');}
+    if(k>FG.waitFor){FG.phase='bite';FG.t0=time;SFX.play('bite');buzz([40,30,40]);}
+  }
+  else if(FG.phase==='bite'&&k>.85){SFX.play('splash');endFishing('أفلتت السمكة الطُّعم<small>اضغط «تفاعل» بسرعة لحظة غوص العوّامة</small>',2.4);}
+  else if(FG.phase==='reel'){
+    // the fish darts around; the green zone rises while you hold and sinks when you let go
+    if(k>FG.nextJump){FG.nextJump=k+FG.jump*(.5+Math.random());FG.ft=clamp(FG.f+(Math.random()-.5)*FG.spd*1.1,.03,.97);}
+    FG.f+=(FG.ft-FG.f)*Math.min(1,dt*FG.spd*3.2);
+    FG.zv+=(fishHold?2.6:-2.3)*dt;FG.zv*=Math.pow(.25,dt);FG.z+=FG.zv*dt;
+    if(FG.z<0){FG.z=0;FG.zv=Math.abs(FG.zv)*.3;}if(FG.z>1-FG.zw){FG.z=1-FG.zw;FG.zv=-Math.abs(FG.zv)*.3;}
+    const inside=FG.f>=FG.z&&FG.f<=FG.z+FG.zw;FG.inside=inside;
+    FG.prog+=(inside?.3:-.2/(.7+FG.spd*.3))*dt;
+    if(fishHold&&(FG.tick=(FG.tick||0)-dt)<=0){FG.tick=.09;SFX.play('reel');}
+    if(FG.prog>=1)landFish();
+    else if(FG.prog<=0){SFX.play('splash');endFishing(`أفلتت ${FISH[FG.fish].name}!<small>أبقِ السمكة داخل المنطقة الخضراء حتى يمتلئ الشريط</small>`,2.6);}
+  }
+}
+function landFish(){
+  const id=FG.fish,f=FISH[id],len=Math.round(f.len[0]+(f.len[1]-f.len[0])*Math.pow(Math.random(),1.4));
+  P.inv['fish_'+id]=(P.inv['fish_'+id]||0)+1;
+  P.fishLog=P.fishLog||{};const L=P.fishLog[id]=P.fishLog[id]||{n:0,best:0};L.n++;const rec=len>L.best&&L.n>1;L.best=Math.max(L.best,len);
+  SFX.play(id==='golden'?'fanfare':'itemGet');buzz(id==='golden'?[60,40,60,40,120]:40);
+  if(fxOn())for(let i=0;i<10;i++)PUFFS.push({x:FG.w.x,y:FG.w.y,vx:(Math.random()-.5)*50,vy:-30-Math.random()*30,r:1.5,t0:time,life:.6,col:'210,235,250'});
+  RIPPLES.push({x:FG.w.x,y:FG.w.y,rx:1,t0:time,sc:scene.id});
+  achCheckFish();
+  endFishing(`اصطدت ${f.name}!<small>طولها ${AR(len)} سم${rec?'، رقم قياسي جديد':''}. تجدها في الحقيبة</small>`,3.2);
+  saveGame();
+}
+
+/* =========================================================
+   DRAWING
+   ========================================================= */
+function drawFishWorld(g,t){
+  if(!FG)return;
+  const w=FG.w,k=time-FG.t0,hx=hero.x+(hero.dir==='left'?-6:hero.dir==='right'?6:2),hy=hero.y-26;
+  // rod tip leans toward the water
+  const ang=Math.atan2(w.y-hy,w.x-hx),tipX=hx+Math.cos(ang)*26,tipY=hy+Math.sin(ang)*26-14;
+  let bx=w.x,by=w.y;
+  if(FG.phase==='cast'){const q=Math.min(1,k/.65);bx=tipX+(w.x-tipX)*q;by=tipY+(w.y-tipY)*q-Math.sin(q*Math.PI)*24;}
+  else if(FG.phase==='wait'){by+=Math.sin(t*2.4)*.8+(time-FG.nib<.25?2.2:0);}
+  else if(FG.phase==='bite'){by+=4+Math.sin(t*30)*1.2;}
+  else if(FG.phase==='reel'){bx+=(FG.f-.5)*18;by+=2+Math.sin(t*14)*1;}
+  g.strokeStyle='#5a3a1c';g.lineWidth=2;g.beginPath();g.moveTo(hx,hy);g.lineTo(tipX,tipY);g.stroke();
+  g.strokeStyle='rgba(250,245,230,.75)';g.lineWidth=.7;g.beginPath();g.moveTo(tipX,tipY);g.quadraticCurveTo((tipX+bx)/2,Math.max(tipY,by)+(FG.phase==='reel'?-4:8),bx,by);g.stroke();
+  if(FG.phase!=='cast'){const q=(t*.9)%1;g.strokeStyle=`rgba(230,245,255,${.55*(1-q)})`;g.lineWidth=.9;ell(g,bx,by+1,3+q*9,(3+q*9)*.45);g.stroke();}
+  if(FG.phase==='bite'||FG.phase==='reel'){g.fillStyle='rgba(230,245,255,.5)';for(let i=0;i<3;i++)circ(g,bx+Math.sin(t*20+i*2)*5,by-2-Math.abs(Math.sin(t*16+i))*4,1);}
+  if(FG.phase!=='bite'){g.fillStyle='#d8432e';ell(g,bx,by-1.5,2.4,2.2);g.fill();g.fillStyle='#fff';ell(g,bx,by+.6,2.4,1.2);g.fill();}
+  if(FG.phase==='bite'){ // "!" over the hero
+    const yy=hero.y-62+Math.sin(t*20)*1.5;g.fillStyle='#fffaf0';rr(g,hero.x-8,yy-12,16,20,6);g.fill();g.strokeStyle='#a9472a';g.lineWidth=1.4;g.stroke();
+    g.fillStyle='#c0392b';g.fillRect(hero.x-1.6,yy-8,3.2,8.5);circ(g,hero.x,yy+4,1.8);
+  }
+}
+function drawFishIcon(g,x,y,s,col,dir=1){
+  g.save();g.translate(x,y);g.scale(s*dir,s);
+  g.fillStyle=col;g.beginPath();g.ellipse(0,0,9,4.6,0,0,TAU);g.fill();
+  g.beginPath();g.moveTo(-7,0);g.lineTo(-14,-5);g.lineTo(-14,5);g.closePath();g.fill();
+  g.fillStyle='rgba(255,255,255,.35)';g.beginPath();g.ellipse(1,-1.6,5,1.6,0,0,TAU);g.fill();
+  g.fillStyle='#1d140c';g.beginPath();g.arc(5,-1,1.1,0,TAU);g.fill();
+  g.restore();
+}
+function drawFishUI(g){
+  if(!FG||FG.phase!=='reel')return;
+  const d=view.dpr,W=view.w,H=view.h,bw=Math.min(300,W-150),bh=24,x0=(W-bw)/2,y0=H-insets.b-96;
+  g.save();g.setTransform(d,0,0,d,0,0);
+  g.fillStyle='rgba(30,18,8,.82)';rr(g,x0-14,y0-34,bw+28,bh+62,14);g.fill();g.strokeStyle='#d9a85c';g.lineWidth=1.5;g.stroke();
+  g.fillStyle='#fdf3dc';g.font='700 13px system-ui,-apple-system,"SF Arabic",sans-serif';g.textAlign='center';g.textBaseline='middle';
+  g.fillText('اضغط مطوّلًا لتحريك المنطقة الخضراء، وأبقِ السمكة داخلها',W/2,y0-19);
+  // the water track
+  const gr=g.createLinearGradient(x0,0,x0+bw,0);gr.addColorStop(0,'#1d4b5e');gr.addColorStop(1,'#2f7896');g.fillStyle=gr;rr(g,x0,y0,bw,bh,8);g.fill();
+  const zx=x0+FG.z*bw,zw=FG.zw*bw;g.fillStyle=FG.inside?'rgba(120,230,130,.75)':'rgba(120,230,130,.42)';rr(g,zx,y0+2,zw,bh-4,6);g.fill();
+  g.strokeStyle='rgba(220,255,220,.9)';g.lineWidth=1.2;rr(g,zx,y0+2,zw,bh-4,6);g.stroke();
+  drawFishIcon(g,x0+FG.f*bw,y0+bh/2,1.05,FG.fish==='golden'?'#f2c44e':'#d9e6e0',FG.ft>FG.f?1:-1);
+  // catch progress
+  g.fillStyle='rgba(255,255,255,.15)';rr(g,x0,y0+bh+8,bw,7,3.5);g.fill();
+  g.fillStyle=FG.prog>.66?'#7ee08a':FG.prog>.33?'#f2c44e':'#e0694f';rr(g,x0,y0+bh+8,Math.max(7,bw*clamp(FG.prog,0,1)),7,3.5);g.fill();
   g.restore();
 }
 
@@ -4584,7 +4733,7 @@ function renderMenu(resetScroll){
   renderHead();
   menuTabs.innerHTML=TABS.map(t=>`<button type="button" role="tab" data-tab="${t.id}" aria-selected="${t.id===menuTab}"><svg viewBox="0 0 24 24" aria-hidden="true">${t.ic}</svg>${t.name}</button>`).join('');
   const top=menuBody.scrollTop;
-  menuBody.innerHTML={beasts:tabBeasts,status:tabStatus,gear:tabGear,bag:tabBag,skills:tabSkills,quests:tabQuests,settings:tabSettings}[menuTab]();
+  menuBody.innerHTML={ach:tabAch,beasts:tabBeasts,status:tabStatus,gear:tabGear,bag:tabBag,skills:tabSkills,quests:tabQuests,settings:tabSettings}[menuTab]();
   menuBody.scrollTop=resetScroll?0:top;
 }
 function tabStatus(){
@@ -4736,6 +4885,69 @@ function backToTitle(){
 }
 continueBtn.addEventListener('click',()=>{if(state!=='title'||!savedData)return;applySave(savedData);startGame(true);});
 
+// ---- src/ui/achievements.js ----
+// الإنجازات وسجل الصيد
+
+Object.assign(ICONS,{
+  fish:'<path d="M3 12c3-5 9-6 14-2l4-3v10l-4-3c-5 4-11 3-14-2z"/><circle cx="8" cy="11" r="1.2" fill="#fff"/>',
+  rod:'<path d="M4 21L18 3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/><path d="M18 3c2 6 2 10 0 14" stroke="currentColor" stroke-width="1" fill="none"/><circle cx="18" cy="18" r="1.8"/>',
+  trophy:'<path d="M7 3h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4a3 3 0 0 0 3 4M17 5h3a3 3 0 0 1-3 4" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M10 13h4v4h-4zM7 20h10v1H7z"/>',
+});
+TABS.splice(TABS.length-1,0,{id:'ach',name:'الإنجازات',ic:'<path d="M7 3h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4a3 3 0 0 0 3 4M17 5h3a3 3 0 0 1-3 4"/><path d="M10 13h4v4h-4zM7 20h10"/>'});
+
+const normalBeasts=()=>BEAST_ORDER.filter(k=>!ENEMIES[k].boss);
+const fishCount=()=>Object.values(P.fishLog||{}).reduce((s,f)=>s+f.n,0);
+const totalKills=()=>Object.values(P.kills||{}).reduce((s,n)=>s+n,0);
+const ACH=[
+  {id:'meet',name:'ابن القرية',desc:'تعرّف على أهل القرية الثمانية.',test:()=>met.size>=8},
+  {id:'ch1',name:'بداية الحكاية',desc:'أنهِ الفصل الأول.',test:()=>chapterDone},
+  {id:'boss1',name:'حارس النور',desc:'اهزم حارس النور في الغابة.',test:()=>!!P.flags.boss},
+  {id:'boss2',name:'سيّد العين',desc:'اهزم حيّة العين وأعد الماء إلى الفلج.',test:()=>!!P.flags.boss2},
+  {id:'boss3',name:'محطّم الحجر',desc:'اهزم عملاق الحصن القديم.',test:()=>!!P.flags.boss3},
+  {id:'ending',name:'نجمة الوادي',desc:'أعد النجمة إلى السماء.',test:()=>!!P.flags.ending},
+  {id:'lv5',name:'مسافر متمرّس',desc:'بلغ المستوى الخامس.',test:()=>levelOf(P.xp)>=5},
+  {id:'lv10',name:'بطل الوادي',desc:'بلغ المستوى العاشر.',test:()=>levelOf(P.xp)>=10},
+  {id:'beasts',name:'عالِم المخلوقات',desc:'اهزم كل أنواع المخلوقات العادية مرة على الأقل.',test:()=>normalBeasts().every(k=>(P.kills[k]||0)>0),prog:()=>[normalBeasts().filter(k=>(P.kills[k]||0)>0).length,normalBeasts().length]},
+  {id:'hunter',name:'درع القرية',desc:'اهزم ١٠٠ مخلوق.',test:()=>totalKills()>=100,prog:()=>[Math.min(100,totalKills()),100]},
+  {id:'rich',name:'تاجر شاطر',desc:'اجمع ١٠٠٠ بيسة في وقت واحد.',test:()=>P.money>=1000},
+  {id:'helper',name:'يد العون',desc:'أنهِ كل المهام الجانبية.',test:()=>Object.keys(SIDEQ).every(id=>qState(id)===2),prog:()=>[Object.keys(SIDEQ).filter(id=>qState(id)===2).length,Object.keys(SIDEQ).length]},
+  {id:'craft',name:'صنعة يد',desc:'اطلب من راشد أن يصوغ لك قطعة.',flag:true},
+  {id:'peddler',name:'زبون أبي خلفان',desc:'اشترِ شيئًا من البائع المتجول.',flag:true},
+  {id:'fish1',name:'أول صيد',desc:'اصطد أول سمكة.',test:()=>fishCount()>=1},
+  {id:'fish25',name:'صيّاد الفلج',desc:'اصطد ٢٥ سمكة.',test:()=>fishCount()>=25,prog:()=>[Math.min(25,fishCount()),25]},
+  {id:'golden',name:'الحظ الذهبي',desc:'اصطد السمكة الذهبية. يقال إنها تظهر أكثر تحت المطر وعند الفجر والمغرب.',test:()=>!!(P.fishLog&&P.fishLog.golden)},
+  {id:'allfish',name:'سجل الماء',desc:'اصطد كل أنواع السمك.',test:()=>FISH_ORDER.every(id=>P.fishLog&&P.fishLog[id]),prog:()=>[FISH_ORDER.filter(id=>P.fishLog&&P.fishLog[id]).length,FISH_ORDER.length]},
+  {id:'splash',name:'طفل المطر',desc:'اقفز في بركة ماء بعد المطر.',flag:true},
+  {id:'rainbow',name:'ألوان بعد المطر',desc:'شاهد قوس قزح فوق القرية.',flag:true},
+  {id:'night',name:'ساهر الليل',desc:'تجوّل في القرية بعد منتصف الليل.',flag:true},
+];
+function achUnlock(id){
+  P.ach=P.ach||{};if(P.ach[id])return;
+  const a=ACH.find(q=>q.id===id);if(!a)return;
+  P.ach[id]=1;SFX.play('quest');
+  notify(`إنجاز جديد: ${a.name}<small>${a.desc}</small>`,3.2);
+  $('menuDot').hidden=false;saveGame();
+}
+let achT=0;
+function achTick(dt){
+  if(state!=='play'||(achT-=dt)>0)return;achT=1;
+  for(const a of ACH)if(a.test&&!(P.ach&&P.ach[a.id])&&a.test())achUnlock(a.id);
+  if(scene.id==='village'){const h=hourNow();if(h<4)achUnlock('night');if(WX.bow>.35)achUnlock('rainbow');}
+}
+function achCheckFish(){for(const id of ['fish1','fish25','golden','allfish']){const a=ACH.find(q=>q.id===id);if(a.test())achUnlock(id);}}
+
+function tabAch(){
+  const got=ACH.filter(a=>P.ach&&P.ach[a.id]).length;
+  const cards=ACH.map(a=>{const on=P.ach&&P.ach[a.id],pr=!on&&a.prog?a.prog():null;
+    return `<div class="skill${on?'':' locked'}">${icon('trophy',on?'#c08a1e':'#b9a687')}<div class="grow"><b>${a.name}${on?' <span class="chip up">تحقق</span>':''}</b><p class="muted" style="margin:2px 0 0">${a.desc}</p>${pr?`<div class="meta"><span class="chip">${AR(pr[0])} من ${AR(pr[1])}</span></div>`:''}</div></div>`;}).join('');
+  const log=P.fishLog||{};
+  const fish=FISH_ORDER.map(id=>{const f=FISH[id],L=log[id];
+    return L?`<div class="skill">${icon('fish',f.col)}<div class="grow"><b>${f.name}</b><div class="meta"><span class="chip">اصطدت ${AR(L.n)}</span><span class="chip up">أطولها ${AR(L.best)} سم</span><span class="chip">${f.where==='village'?'فلج القرية':f.where==='wadi'?'عين الوادي':'نادرة في كل مكان'}</span></div></div></div>`
+      :`<div class="skill locked">${icon('fish','#b9a687')}<div class="grow"><b>؟؟؟</b><p class="muted" style="margin:2px 0 0">${f.where==='village'?'تعيش في فلج القرية.':f.where==='wadi'?'تعيش في ماء الوادي.':'نادرة جدًا.'}</p></div></div>`;}).join('');
+  return `<h3>الإنجازات <span class="chip">${AR(got)} من ${AR(ACH.length)}</span></h3><div class="skills">${cards}</div>
+  <h3 style="margin-top:18px">سجل الصيد</h3>${P.inv.rod?'':'<p class="muted">تحتاج سنارة للصيد. يبيعها سعيد في دكانه.</p>'}<div class="skills">${fish}</div>`;
+}
+
 // ---- src/boot.js ----
 // التشغيل
 
@@ -4761,7 +4973,7 @@ function start(data){
 }
 window.claude?.hot?.snapshot?.(()=>snapshot());
 window.__game={get state(){return state;},get scene(){return scene.id;},get target(){return target;},get met(){return met.size;},get quest(){return questStarted;},get chapter(){return chapterDone;},
-  hero,keys,NPCS,MAP,SCENES,resolve,act,collidersFor,drawPerson,drawHero,LOOKS,openMenu,closeMenu,stat,heroSpeed,startEncounter,get B(){return B;},FOREST,setChapter(v){chapterDone=v;questStarted=true;syncAisha();},FORT,WADI,get gateSeq(){return gateSeq;},openGate,nightAmount,SFX,WX,wxNow,wxPlan,get P(){return P;},OPT,get toast(){return toastKey;},get view(){return view;},
+  hero,keys,NPCS,MAP,SCENES,resolve,act,collidersFor,drawPerson,drawHero,LOOKS,openMenu,closeMenu,stat,heroSpeed,startEncounter,get B(){return B;},FOREST,setChapter(v){chapterDone=v;questStarted=true;syncAisha();},FORT,WADI,get gateSeq(){return gateSeq;},openGate,nightAmount,SFX,get FG(){return FG;},openShop,setHold(v){fishHold=v;},fishWater,achUnlock,ACH,WX,wxNow,wxPlan,get P(){return P;},OPT,get toast(){return toastKey;},get view(){return view;},
   step(dt,n=1){for(let i=0;i<n;i++)update(dt);}};
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
 

@@ -60,7 +60,7 @@ function renderShop(reset){
   const row=(id,right,extra)=>{const it=ITEMS[id];const own=P.inv[id]||0;return `<div class="row">${icon(it.icon,it.col)}<span class="grow"><span class="val">${it.name}${own?` <span class="chip">تملك ${AR(own)}</span>`:''}</span><span class="lbl">${it.desc}</span>${it.stats?`<span class="chips">${chipsOf(it.stats)}</span>`:''}${extra||''}</span>${right}</div>`;};
   if(shopTab==='buy'){
     html+=`<div class="list">${SHOP[shopId].stock.map(id=>{const it=ITEMS[id],ok=P.money>=it.price;
-      return row(id,`<button type="button" class="btn" data-buy="${id}"${ok?'':' disabled'}>${baisa(it.price)}</button>`);}).join('')}</div>`;
+      return row(id,it.key&&P.inv[id]?'<span class="tag-eq">تملكها</span>':`<button type="button" class="btn" data-buy="${id}"${ok?'':' disabled'}>${baisa(it.price)}</button>`);}).join('')}</div>`;
   }else if(shopTab==='sell'){
     const ids=Object.keys(P.inv).filter(id=>ITEMS[id]&&P.inv[id]>0&&!ITEMS[id].key&&sellValue(id)>0&&P.inv[id]>equippedCount(id));
     html+=ids.length?`<div class="list">${ids.map(id=>row(id,`<button type="button" class="btn ghost" data-sell="${id}">بيع بـ${baisa(sellValue(id))}</button>`)).join('')}</div>`
@@ -79,10 +79,10 @@ shopEl.addEventListener('click',e=>{
   const d=b.dataset;
   if(b.id==='shopClose'){closeShop();return;}
   if(d.stab){SFX.play('tab');shopTab=d.stab;shopMsg='';renderShop(true);return;}
-  if(d.buy){const it=ITEMS[d.buy];if(P.money<it.price){SFX.play('error');return;}P.money-=it.price;P.inv[d.buy]=(P.inv[d.buy]||0)+1;SFX.play('coin');shopMsg=`اشتريت ${it.name}.${it.slot?' تجده في القائمة ← العتاد.':''}`;renderShop();saveGame();return;}
+  if(d.buy){const it=ITEMS[d.buy];if(P.money<it.price){SFX.play('error');return;}P.money-=it.price;P.inv[d.buy]=(P.inv[d.buy]||0)+1;if(shopId==='peddler')achUnlock('peddler');SFX.play('coin');shopMsg=`اشتريت ${it.name}.${it.slot?' تجده في القائمة ← العتاد.':''}`;renderShop();saveGame();return;}
   if(d.sell){const v=sellValue(d.sell);P.inv[d.sell]--;P.money+=v;SFX.play('coin');shopMsg=`بعت ${ITEMS[d.sell].name} بـ${baisa(v)}.`;renderShop();saveGame();return;}
   if(d.craft){const r=RECIPES.find(q=>q.id===d.craft);if(!r)return;
     if(P.money<r.cost||!Object.keys(r.need).every(m=>(P.inv[m]||0)>=r.need[m])){SFX.play('error');return;}
-    P.money-=r.cost;Object.keys(r.need).forEach(m=>P.inv[m]-=r.need[m]);P.inv[r.id]=1;SFX.play('anvil');
+    P.money-=r.cost;Object.keys(r.need).forEach(m=>P.inv[m]-=r.need[m]);P.inv[r.id]=1;SFX.play('anvil');achUnlock('craft');
     shopMsg=`صاغ لك راشد ${ITEMS[r.id].name}. البسه من القائمة ← العتاد.`;$('menuDot').hidden=false;renderShop();saveGame();}
 });

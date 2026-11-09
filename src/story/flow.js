@@ -30,6 +30,7 @@ function startGame(resume){
 }
 function act(){
   if(state==='dialog'){advance();return;}
+  if(state==='fish'){fishPress();return;}
   if(state!=='play'||talkCooldown>0||!target)return;
   if(target.kind==='npc')openDialog(target.npc);
   else if(target.kind==='door')enterHouse(target.house);
@@ -37,6 +38,7 @@ function act(){
   else if(target.kind==='gate'){openGate(target.i);talkCooldown=.5;}
   else if(target.kind==='pot'){smashPot(target.p);talkCooldown=.4;}
   else if(target.kind==='innergate'){tryInnerGate();talkCooldown=.6;}
+  else if(target.kind==='fish')startFishing(target.w);
   else if(target.kind==='pickup'){takePickup(target.p);talkCooldown=.2;}
   else if(target.kind==='spring'){const full=curHP()>=stat('hp')&&curMP()>=stat('mp')&&(!P.flags.aisha||allyHP()>=allyStat('hp')&&allyMP()>=allyStat('mp'));P.hp=null;P.mp=null;P.ally={hp:null,mp:null};SFX.play('water');showToast('note',scene.fort?'شربتم من بئر الحصن<small>عادت إليكم الصحة والطاقة</small>':dryVillage()?'بقي في الحوض قليل من الماء…<small>شربتم فعادت إليكم الصحة والطاقة</small>':full?'ماء النافورة بارد وعذب':'شربت من ماء النافورة<small>عادت إليك صحتك وطاقتك كاملتين</small>',2.6);saveGame();talkCooldown=.5;}
 }

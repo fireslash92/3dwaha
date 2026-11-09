@@ -90,7 +90,7 @@ function puddleFeel(dt){
   splashCool-=dt;
   const list=PUDDLES[scene.id];if(!list||WX.wet<.25||!hero.moving||splashCool>0)return;
   for(const p of list){const dx=(hero.x-p.x)/(p.rx+3),dy=(hero.y-p.y)/(p.ry+3);
-    if(dx*dx+dy*dy<1){splashCool=.3;RIPPLES.push({x:hero.x,y:hero.y,rx:1,t0:time,sc:scene.id});SFX.play('splash');
+    if(dx*dx+dy*dy<1){splashCool=.3;achUnlock('splash');RIPPLES.push({x:hero.x,y:hero.y,rx:1,t0:time,sc:scene.id});SFX.play('splash');
       if(fxOn())for(let i=0;i<4;i++)PUFFS.push({x:hero.x,y:hero.y-1,vx:(Math.random()-.5)*30,vy:-14-Math.random()*10,r:1.2,t0:time,life:.35,col:'200,225,240'});break;}}
 }
 function drawPuddles(g,L,T,R2,B2){

@@ -55,6 +55,7 @@ function findTarget(){
   for(const n of NPCS){if(n.scene!==scene.id)continue;const d=Math.hypot(hero.x-n.x,hero.y-n.y);if(d<bd){bd=d;best={kind:'npc',npc:n,x:n.x,y:n.y+(n.look.child?6:0)};}}
   if(best)return best;
   for(const p of PICKUPS)if(p.scene===scene.id&&pickupActive(p)&&Math.hypot(hero.x-p.x,hero.y-p.y)<36)return {kind:'pickup',p,x:p.x,y:p.y-10};
+  {const ft=fishTarget();if(ft)return ft;}
   if(scene.fort)return fortTarget();
   if(scene.forest){if(Math.hypot(hero.x-STONE.x,hero.y-STONE.y)<52)return {kind:'npc',npc:STONE,x:STONE.x,y:STONE.y-6};return null;}
   if(scene.wadi){
@@ -70,10 +71,10 @@ function findTarget(){
 }
 function update(dt){
   time+=dt;
-  lifeTick(dt);weatherTick(dt);puddleFeel(dt);
+  lifeTick(dt);weatherTick(dt);puddleFeel(dt);fishTick(dt);achTick(dt);
   for(const n of NPCS)if(n.route&&n.route.length&&n.scene!==scene.id)walkRoute(n,dt);
   if(talkCooldown>0)talkCooldown-=dt;
-  if(state==='play'||state==='dialog')P.clock=(P.clock??540)+dt*DAY_RATE;
+  if(state==='play'||state==='dialog'||state==='fish')P.clock=(P.clock??540)+dt*DAY_RATE;
   for(const n of NPCS)if(n.scene===scene.id)updateNpc(n,dt);
   if(state==='play'){
     const v=inputVector();
@@ -104,7 +105,7 @@ function update(dt){
       inForest=inZ;
     }
   }else{hero.moving=false;if(state!=='dialog')target=null;}
-  actBtn.classList.toggle('ready',state==='play'&&!!target);
+  actBtn.classList.toggle('ready',state==='play'&&!!target||state==='fish');
   if(toastKey&&time>toastUntil)hideToast();
   if(!toastKey&&toastQ.length&&time>toastGap&&state==='play'){const q=toastQ.shift();showToast('note',q[0],q[1]);}
   if(state==='play'&&time-lastSave>15)saveGame();

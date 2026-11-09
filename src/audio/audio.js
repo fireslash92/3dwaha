@@ -121,6 +121,12 @@ const SFX=(()=>{
     meow:o=>{const v=.04*(o.vol??1);tone({f:620,f2:920,type:'triangle',lp:2600,a:.03,dur:.18,v,pan:o.pan,slide:.15});tone({f:920,f2:520,type:'triangle',lp:2600,dur:.22,v,d:.17,pan:o.pan});},
     flap:o=>{const v=.06*(o.vol??1);for(let i=0;i<7;i++)noise({type:'bandpass',f:900+Math.random()*700,q:1.2,dur:.035,v,d:i*.05,pan:o.pan});},
     thunder:o=>{const v=o.vol??1;noise({type:'highpass',f:1800,dur:.12,v:.08*v});noise({type:'lowpass',f:420,f2:90,a:.05,dur:2.6,v:.32*v,pan:Math.random()-.5});noise({type:'lowpass',f:200,a:.4,dur:2.2,v:.22*v,d:.5});tone({f:55,f2:38,a:.1,dur:1.6,v:.12*v});},
+    hoof:o=>{const v=o.vol??1;tone({f:95,f2:55,dur:.07,v:.16*v});noise({type:'lowpass',f:700,dur:.05,v:.08*v});tone({f:85,f2:50,dur:.06,v:.1*v,d:.12});},
+    perfect:()=>{tone({f:1568,type:'triangle',dur:.1,v:.07});tone({f:2093,type:'triangle',dur:.12,v:.05,d:.05});},
+    stumble:()=>{tone({f:160,f2:60,dur:.2,v:.22});noise({type:'lowpass',f:900,dur:.25,v:.16});noise({type:'bandpass',f:2000,dur:.15,v:.05,d:.1});},
+    crowd:()=>{for(let i=0;i<3;i++)noise({type:'bandpass',f:900+i*500,q:.7,a:.25,dur:1.3,v:.05,d:i*.1,pan:i-1});for(let i=0;i<6;i++)tone({f:900+Math.random()*700,f2:1300+Math.random()*600,type:'triangle',dur:.12,v:.02,d:.2+i*.12+Math.random()*.1,pan:Math.random()-.5});},
+    beep:()=>tone({f:880,type:'square',lp:2000,dur:.12,v:.06}),
+    go:()=>{tone({f:1318,type:'square',lp:2600,dur:.35,v:.07});tone({f:1760,type:'triangle',dur:.3,v:.05,d:.02});},
     cast:()=>{noise({type:'bandpass',f:900,f2:3200,q:1.2,dur:.3,v:.07});tone({f:1800,f2:900,type:'triangle',dur:.2,v:.025,d:.05});},
     plop:()=>{tone({f:520,f2:180,dur:.09,v:.12});noise({type:'bandpass',f:900,q:1.5,dur:.08,v:.05,d:.02});},
     nibble:()=>{tone({f:700,f2:400,dur:.04,v:.06});},
@@ -133,7 +139,7 @@ const SFX=(()=>{
   };
   function play(name,o){if(!ready()||!S[name])return;try{S[name](o||{});}catch(err){(window.__sfxErr=window.__sfxErr||[]).push(name+': '+err.message);}}
   const names=()=>Object.keys(S);
-  const VOICES={peddler:150,salem:140,saeed:175,rashid:160,hamad:330,mariam:280,shamsa:400,ummsaeed:235,aisha:300,zuwaina:215};
+  const VOICES={mubarak:165,peddler:150,salem:140,saeed:175,rashid:160,hamad:330,mariam:280,shamsa:400,ummsaeed:235,aisha:300,zuwaina:215};
   function voice(n,text){if(!n)return;if(n.portrait){play('mystic');return;}play('voice',{f:VOICES[n.id]||220,n:Math.min(6,Math.max(2,Math.ceil(text.length/12)))});}
   function step(kind,pan){play('step',{kind,pan});}
   /* ---- music: original tunes in Arabic maqamat (bayati for the village, hijaz for danger) ---- */
@@ -162,7 +168,7 @@ const SFX=(()=>{
   const E=63.5; // E half-flat, the bayati quarter tone
   const TRACKS={
     village:{bpm:92,len:128,ev:[]},forest:{bpm:62,len:128,ev:[]},battle:{bpm:140,len:128,ev:[]},
-    night:{bpm:70,len:128,ev:[]},wadi:{bpm:84,len:128,ev:[]},fort:{bpm:60,len:128,ev:[]},boss:{bpm:150,len:128,ev:[]}};
+    night:{bpm:70,len:128,ev:[]},race:{bpm:110,len:64,ev:[]},wadi:{bpm:84,len:128,ev:[]},fort:{bpm:60,len:128,ev:[]},boss:{bpm:150,len:128,ev:[]}};
   (()=>{
     const V=TRACKS.village.ev;
     [[0,69,4],[4,67,2],[6,65,2],[8,67,4],[12,69,4],[16,70,2],[18,69,2],[20,67,4],[24,65,2],[26,E,2],[28,62,4],
@@ -204,6 +210,13 @@ const SFX=(()=>{
     [[0,[38,45]],[32,[39,46]],[64,[38,45]],[96,[37,44]]].forEach(([s,ch])=>ch.forEach(m=>Fo.push({s,i:'pad',m,l:32,v:.03})));
     [[0,74],[10,75],[20,78],[34,74],[48,72],[62,70],[76,75],[90,74],[104,70],[116,69]].forEach(([s,m])=>Fo.push({s,i:'bell',m,v:.03}));
     for(let b=0;b<8;b++){const s=b*16;Fo.push({s,i:'drum',k:'d',v:.15});Fo.push({s:s+3,i:'drum',k:'d',v:.09});Fo.push({s:s+8,i:'pluck',m:b%4===1?51:50,l:6,v:.05});}
+    /* camel race: a quick hijaz on the same tempo as the gait */
+    const Ra=TRACKS.race.ev;
+    for(let b=0;b<4;b++){const s=b*16;
+      [[0,'d'],[4,'t'],[8,'d'],[10,'d'],[12,'t']].forEach(([o,k])=>Ra.push({s:s+o,i:'drum',k,v:.12}));[2,6,14].forEach(o=>Ra.push({s:s+o,i:'drum',k:'h',v:.1}));
+      [[0,38],[4,38],[8,39],[12,42]].forEach(([o,m])=>Ra.push({s:s+o,i:'bass',m,l:.22,v:.11}));}
+    [[0,74,2],[2,75,2],[4,78,2],[6,79,2],[8,81,4],[12,79,2],[14,78,2],[16,75,4],[20,74,4],[24,75,2],[26,78,2],[28,74,4],
+     [32,79,2],[34,81,2],[36,82,4],[40,81,2],[42,79,2],[44,78,4],[48,75,2],[50,78,2],[52,79,2],[54,78,2],[56,74,8]].forEach(([s,m,l])=>Ra.push({s,i:'pluck',m,l,v:.08}));
     /* bosses: fast hijaz, driving bass and drums */
     const Bo=TRACKS.boss.ev;
     for(let b=0;b<8;b++){const s=b*16,up=b%4===3?5:0;
@@ -219,7 +232,8 @@ const SFX=(()=>{
   const mus={name:null,g:null,step:0,next:0};
   function musicTick(){
     let want=null,lvl=1;
-    if(state==='battle'||(state==='fade'&&B)){want=B&&B.ended?null:B&&B.boss?'boss':'battle';}
+    if(state==='race'||RACE){want='race';}
+    else if(state==='battle'||(state==='fade'&&B)){want=B&&B.ended?null:B&&B.boss?'boss':'battle';}
     else if(state==='title'||state==='chapter')want='village';
     else if(scene.forest)want='forest';
     else if(scene.wadi)want='wadi';

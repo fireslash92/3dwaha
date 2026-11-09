@@ -26,6 +26,8 @@ const ACH=[
   {id:'helper',name:'يد العون',desc:'أنهِ كل المهام الجانبية.',test:()=>Object.keys(SIDEQ).every(id=>qState(id)===2),prog:()=>[Object.keys(SIDEQ).filter(id=>qState(id)===2).length,Object.keys(SIDEQ).length]},
   {id:'craft',name:'صنعة يد',desc:'اطلب من راشد أن يصوغ لك قطعة.',flag:true},
   {id:'peddler',name:'زبون أبي خلفان',desc:'اشترِ شيئًا من البائع المتجول.',flag:true},
+  {id:'race1',name:'فارس الهجن',desc:'افز بسباق هجن في وادي الفلج.',flag:true},
+  {id:'race3',name:'كأس عين الوادي',desc:'افز بأصعب سباق للهجن.',flag:true},
   {id:'fish1',name:'أول صيد',desc:'اصطد أول سمكة.',test:()=>fishCount()>=1},
   {id:'fish25',name:'صيّاد الفلج',desc:'اصطد ٢٥ سمكة.',test:()=>fishCount()>=25,prog:()=>[Math.min(25,fishCount()),25]},
   {id:'golden',name:'الحظ الذهبي',desc:'اصطد السمكة الذهبية. يقال إنها تظهر أكثر تحت المطر وعند الفجر والمغرب.',test:()=>!!(P.fishLog&&P.fishLog.golden)},

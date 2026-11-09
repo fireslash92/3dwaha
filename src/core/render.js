@@ -7,6 +7,7 @@
 const scratch=[];
 function render(){
   if(B){renderBattle();return;}
+  if(RACE){renderRace();return;}
   const g=ctx,s=view.dpr*view.zoom,vw=view.w/view.zoom,vh=view.h/view.zoom;
   const so=state==='title'?[0,0]:shakeOffset(),cx=Math.round((view.camX+so[0])*s)/s,cy=Math.round((view.camY+so[1])*s)/s;
   g.setTransform(1,0,0,1,0,0);g.fillStyle=scene.bg;g.fillRect(0,0,canvas.width,canvas.height);

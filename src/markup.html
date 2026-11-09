@@ -1,0 +1,71 @@
+<div id="game" class="title" dir="rtl" lang="ar">
+  <canvas id="view" aria-label="قرية عين الوادي"></canvas>
+  <div id="topRight"><div id="hud" hidden><span id="hudLabel">أهل القرية</span><b id="hudCount">٠ من ٨</b></div><canvas id="mini" aria-label="الخريطة الصغيرة" role="img"></canvas></div>
+  <button id="menuBtn" type="button" aria-label="فتح القائمة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>القائمة<span class="dot" id="menuDot" hidden></span></button>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="stickZone" aria-hidden="true"><div id="stickBase"><div id="stickKnob"></div></div></div>
+  <button id="actBtn" type="button" aria-label="تفاعل">تفاعل</button>
+  <section id="dialog" role="dialog" aria-labelledby="dlgName" hidden>
+    <div class="portrait"><canvas id="portrait" width="132" height="132"></canvas></div>
+    <div class="dlg-body">
+      <div id="dlgName" class="name">سالم</div>
+      <p id="dlgText"></p>
+      <div class="dlg-foot">
+        <span id="dlgDots" aria-hidden="true"></span>
+        <button id="dlgNext" type="button">التالي</button>
+      </div>
+    </div>
+  </section>
+  <div id="menu" role="dialog" aria-label="القائمة الرئيسية" hidden>
+    <div class="menu-panel">
+      <header class="menu-head">
+        <canvas id="heroFace" width="108" height="108"></canvas>
+        <div class="who"><div class="hname">ناصر</div><div class="htitle" id="heroTitle">مسافر غريب</div><div class="lvl" id="heroLvl">المستوى ١</div></div>
+        <div class="coins" id="heroMoney"></div>
+        <div class="bars" id="heroBars"></div>
+        <button id="menuClose" type="button">إغلاق</button>
+      </header>
+      <nav class="menu-tabs tabs-scroll" id="menuTabs" role="tablist"></nav>
+      <section class="menu-body scroll" id="menuBody" role="tabpanel"></section>
+    </div>
+  </div>
+  <div id="battle" hidden>
+    <div id="bMsg" role="status" aria-live="polite"></div>
+    <div class="b-ui" id="bUi">
+      <div class="b-box b-cmds" id="bCmds" role="group" aria-label="أوامر المعركة"></div>
+      <div class="b-box b-party" id="bParty"></div>
+    </div>
+  </div>
+  <div id="shop" role="dialog" aria-labelledby="shopName" hidden>
+    <div class="shop-panel">
+      <header class="menu-head">
+        <div class="who"><div class="hname" id="shopName"></div><div class="htitle" id="shopSub"></div></div>
+        <div class="coins" id="shopMoney"></div>
+        <button id="shopClose" class="head-close" type="button">إغلاق</button>
+      </header>
+      <nav class="shop-tabs tabs-scroll" id="shopTabs" role="tablist"></nav>
+      <section class="menu-body scroll" id="shopBody"></section>
+    </div>
+  </div>
+  <div id="fade"></div>
+  <div id="title" class="overlay">
+    <div class="title-card">
+      <p class="eyebrow">الفصل الأول · القرية</p>
+      <h1>أسرار عين الوادي</h1>
+      <p class="tag">قرية هادئة على طرف الغابة، وضوء غريب ظهر بين أشجارها.</p>
+      <div class="title-actions">
+        <button id="continueBtn" class="big-btn" type="button" hidden>متابعة الرحلة</button>
+        <button id="startBtn" class="big-btn" type="button">ابدأ الرحلة</button>
+      </div>
+      <p class="rotate-tip">لمشهد أوسع، أدِر الهاتف أفقيًا</p>
+    </div>
+  </div>
+  <div id="chapter" class="overlay" hidden>
+    <div class="title-card">
+      <p class="eyebrow">عين الوادي</p>
+      <h2>نهاية الفصل الأول</h2>
+      <p class="tag">عرفتَ أهل القرية كلهم، ومع الفجر يُفتح طريق الغابة.<br>يتبع: ضوء بين الأشجار</p>
+      <button id="chapterBtn" class="big-btn" type="button">متابعة التجوّل</button>
+    </div>
+  </div>
+</div>

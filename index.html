@@ -1,0 +1,130 @@
+<!doctype html>
+<!-- هذا الملف يُولَّد تلقائيًا من tools/build.mjs، فلا تعدّله يدويًا -->
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>أسرار عين الوادي</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="description" content="لعبة مغامرات بأسلوب JRPG الكلاسيكي في قرية عمانية.">
+<meta name="theme-color" content="#22301a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="عين الوادي">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;700&display=swap">
+<style>[hidden]{display:none!important}</style>
+<link rel="stylesheet" href="styles/main.css?v=692ee480cd">
+</head>
+<body>
+<div id="game" class="title" dir="rtl" lang="ar">
+  <canvas id="view" aria-label="قرية عين الوادي"></canvas>
+  <div id="topRight"><div id="hud" hidden><span id="hudLabel">أهل القرية</span><b id="hudCount">٠ من ٨</b></div><canvas id="mini" aria-label="الخريطة الصغيرة" role="img"></canvas></div>
+  <button id="menuBtn" type="button" aria-label="فتح القائمة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>القائمة<span class="dot" id="menuDot" hidden></span></button>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="stickZone" aria-hidden="true"><div id="stickBase"><div id="stickKnob"></div></div></div>
+  <button id="actBtn" type="button" aria-label="تفاعل">تفاعل</button>
+  <section id="dialog" role="dialog" aria-labelledby="dlgName" hidden>
+    <div class="portrait"><canvas id="portrait" width="132" height="132"></canvas></div>
+    <div class="dlg-body">
+      <div id="dlgName" class="name">سالم</div>
+      <p id="dlgText"></p>
+      <div class="dlg-foot">
+        <span id="dlgDots" aria-hidden="true"></span>
+        <button id="dlgNext" type="button">التالي</button>
+      </div>
+    </div>
+  </section>
+  <div id="menu" role="dialog" aria-label="القائمة الرئيسية" hidden>
+    <div class="menu-panel">
+      <header class="menu-head">
+        <canvas id="heroFace" width="108" height="108"></canvas>
+        <div class="who"><div class="hname">ناصر</div><div class="htitle" id="heroTitle">مسافر غريب</div><div class="lvl" id="heroLvl">المستوى ١</div></div>
+        <div class="coins" id="heroMoney"></div>
+        <div class="bars" id="heroBars"></div>
+        <button id="menuClose" type="button">إغلاق</button>
+      </header>
+      <nav class="menu-tabs tabs-scroll" id="menuTabs" role="tablist"></nav>
+      <section class="menu-body scroll" id="menuBody" role="tabpanel"></section>
+    </div>
+  </div>
+  <div id="battle" hidden>
+    <div id="bMsg" role="status" aria-live="polite"></div>
+    <div class="b-ui" id="bUi">
+      <div class="b-box b-cmds" id="bCmds" role="group" aria-label="أوامر المعركة"></div>
+      <div class="b-box b-party" id="bParty"></div>
+    </div>
+  </div>
+  <div id="shop" role="dialog" aria-labelledby="shopName" hidden>
+    <div class="shop-panel">
+      <header class="menu-head">
+        <div class="who"><div class="hname" id="shopName"></div><div class="htitle" id="shopSub"></div></div>
+        <div class="coins" id="shopMoney"></div>
+        <button id="shopClose" class="head-close" type="button">إغلاق</button>
+      </header>
+      <nav class="shop-tabs tabs-scroll" id="shopTabs" role="tablist"></nav>
+      <section class="menu-body scroll" id="shopBody"></section>
+    </div>
+  </div>
+  <div id="fade"></div>
+  <div id="title" class="overlay">
+    <div class="title-card">
+      <p class="eyebrow">الفصل الأول · القرية</p>
+      <h1>أسرار عين الوادي</h1>
+      <p class="tag">قرية هادئة على طرف الغابة، وضوء غريب ظهر بين أشجارها.</p>
+      <div class="title-actions">
+        <button id="continueBtn" class="big-btn" type="button" hidden>متابعة الرحلة</button>
+        <button id="startBtn" class="big-btn" type="button">ابدأ الرحلة</button>
+      </div>
+      <p class="rotate-tip">لمشهد أوسع، أدِر الهاتف أفقيًا</p>
+    </div>
+  </div>
+  <div id="chapter" class="overlay" hidden>
+    <div class="title-card">
+      <p class="eyebrow">عين الوادي</p>
+      <h2>نهاية الفصل الأول</h2>
+      <p class="tag">عرفتَ أهل القرية كلهم، ومع الفجر يُفتح طريق الغابة.<br>يتبع: ضوء بين الأشجار</p>
+      <button id="chapterBtn" class="big-btn" type="button">متابعة التجوّل</button>
+    </div>
+  </div>
+</div>
+<script src="src/core/helpers.js?v=692ee480cd"></script>
+<script src="src/world/village-map.js?v=692ee480cd"></script>
+<script src="src/world/interiors.js?v=692ee480cd"></script>
+<script src="src/core/collision.js?v=692ee480cd"></script>
+<script src="src/art/hero.js?v=692ee480cd"></script>
+<script src="src/art/villagers.js?v=692ee480cd"></script>
+<script src="src/art/props.js?v=692ee480cd"></script>
+<script src="src/world/ground.js?v=692ee480cd"></script>
+<script src="src/world/drawables.js?v=692ee480cd"></script>
+<script src="src/world/scenes.js?v=692ee480cd"></script>
+<script src="src/story/people.js?v=692ee480cd"></script>
+<script src="src/rpg/data.js?v=692ee480cd"></script>
+<script src="src/core/state.js?v=692ee480cd"></script>
+<script src="src/core/view.js?v=692ee480cd"></script>
+<script src="src/core/input.js?v=692ee480cd"></script>
+<script src="src/story/flow.js?v=692ee480cd"></script>
+<script src="src/core/update.js?v=692ee480cd"></script>
+<script src="src/core/render.js?v=692ee480cd"></script>
+<script src="src/world/forest.js?v=692ee480cd"></script>
+<script src="src/battle/battle.js?v=692ee480cd"></script>
+<script src="src/audio/audio.js?v=692ee480cd"></script>
+<script src="src/rpg/economy.js?v=692ee480cd"></script>
+<script src="src/story/side-quests.js?v=692ee480cd"></script>
+<script src="src/world/day-night.js?v=692ee480cd"></script>
+<script src="src/battle/elements.js?v=692ee480cd"></script>
+<script src="src/world/wadi.js?v=692ee480cd"></script>
+<script src="src/ui/bestiary.js?v=692ee480cd"></script>
+<script src="src/world/fort.js?v=692ee480cd"></script>
+<script src="src/ui/minimap.js?v=692ee480cd"></script>
+<script src="src/core/save.js?v=692ee480cd"></script>
+<script src="src/ui/menu.js?v=692ee480cd"></script>
+<script src="src/boot.js?v=692ee480cd"></script>
+<script>
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>

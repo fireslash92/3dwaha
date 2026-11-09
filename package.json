@@ -1,0 +1,16 @@
+{
+  "name": "asrar-ayn-alwadi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "أسرار عين الوادي: لعبة JRPG كلاسيكية في قرية عمانية",
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "serve": "python3 -m http.server 8080",
+    "test": "node tools/build.mjs && node tests/smoke.mjs",
+    "test:artifact": "node tools/build.mjs && node tests/smoke.mjs artifact"
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
+  }
+}

@@ -19,6 +19,7 @@ function readInsets(){const cs=getComputedStyle(probe);insets.t=parseFloat(cs.pa
 
 let rebuildTimer=0;
 function resize(){
+  if(typeof OPT==="undefined")return; // a viewport event can fire while later scripts are still loading
   readInsets();
   const w=Math.max(1,gameEl.clientWidth),h=Math.max(1,gameEl.clientHeight);
   view.w=w;view.h=h;view.dpr=Math.min(window.devicePixelRatio||1,OPT.quality==='saver'?1.25:2);

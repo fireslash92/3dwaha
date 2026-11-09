@@ -30,6 +30,7 @@
  "src/world/fort.js",
  "src/world/life.js",
  "src/world/weather.js",
+ "src/fx/atmosphere.js",
  "src/ui/minimap.js",
  "src/core/save.js",
  "src/ui/menu.js",

@@ -35,8 +35,10 @@ function render(){
   scratch.push({y:hero.y+.01,x:hero.x,draw:g2=>drawHero(g2,hero.x,hero.y,hero.dir,hero.phase,hero.moving,t,time>hero.blinkAt)});
   scratch.sort((a,b)=>a.y-b.y||a.x-b.x);
   for(const d of scratch)d.draw(g,t);
+  drawCloudShadows(g,L,T,Rr,Bt);
   drawBunting(g,t);
   drawAirFeel(g);
+  drawSunShafts(g);drawCanopy(g);
   drawNight(g,cx,cy);
   drawWeatherScreen(g,false);
   for(const n of NPCS){if(n.scene!==scene.id||target&&target.npc===n&&state==='play')continue;const m=questMark(n);if(m)drawQuestMark(g,n,m,t);else if(n.shop&&met.has(n.id)&&Math.hypot(hero.x-n.x,hero.y-n.y)<150)drawShopMark(g,n,t);}

@@ -155,7 +155,8 @@ const SFX=(()=>{
   }
   const E=63.5; // E half-flat, the bayati quarter tone
   const TRACKS={
-    village:{bpm:92,len:128,ev:[]},forest:{bpm:62,len:128,ev:[]},battle:{bpm:140,len:128,ev:[]}};
+    village:{bpm:92,len:128,ev:[]},forest:{bpm:62,len:128,ev:[]},battle:{bpm:140,len:128,ev:[]},
+    night:{bpm:70,len:128,ev:[]},wadi:{bpm:84,len:128,ev:[]},fort:{bpm:60,len:128,ev:[]},boss:{bpm:150,len:128,ev:[]}};
   (()=>{
     const V=TRACKS.village.ev;
     [[0,69,4],[4,67,2],[6,65,2],[8,67,4],[12,69,4],[16,70,2],[18,69,2],[20,67,4],[24,65,2],[26,E,2],[28,62,4],
@@ -177,15 +178,47 @@ const SFX=(()=>{
     const mel=[[0,74,3],[3,75,3],[6,78,2],[8,79,4],[12,78,2],[14,75,2],[16,74,6],[22,72,2],[24,70,4],[28,69,4],
       [32,67,3],[35,69,3],[38,70,2],[40,72,4],[44,70,2],[46,69,2],[48,70,2],[50,69,2],[52,67,2],[54,66,2],[56,67,8]];
     mel.forEach(([s,m,l])=>{Bt.push({s,i:'lead',m,l,v:.045});Bt.push({s:s+64,i:'lead',m:m+(s<32?0:0),l,v:.045});});
+    /* village at night: the same bayati, slower and hushed, with bells like stars */
+    const N=TRACKS.night.ev;
+    [[0,62,6],[8,65,4],[12,E,4],[16,62,10],[32,65,6],[40,67,4],[44,69,4],[48,67,10],[64,69,6],[72,70,4],[76,69,4],[80,67,10],[96,65,4],[100,E,4],[104,62,4],[108,60,4],[112,62,14]].forEach(([s,m,l])=>N.push({s,i:'pluck',m,l,v:.065}));
+    [[0,[50,57]],[32,[48,55]],[64,[46,53]],[96,[45,52]]].forEach(([s,ch])=>ch.forEach(m=>N.push({s,i:'pad',m,l:32,v:.018})));
+    [[6,81],[26,79],[58,77],[90,81],[122,74]].forEach(([s,m])=>N.push({s,i:'bell',m,v:.022}));
+    for(let b=0;b<8;b++)N.push({s:b*16,i:'drum',k:'d',v:.05});
+    /* wadi: hijaz on D over a maqsum rhythm, like a caravan crossing the sand */
+    const W=TRACKS.wadi.ev;
+    [[0,74,4],[4,72,2],[6,70,2],[8,69,4],[12,70,2],[14,69,2],[16,67,4],[20,66,2],[22,63,2],[24,62,8],
+     [32,62,2],[34,63,2],[36,66,4],[40,67,2],[42,69,2],[44,70,4],[48,69,2],[50,67,2],[52,66,2],[54,67,2],[56,69,8],
+     [64,74,3],[67,75,1],[68,74,4],[72,72,2],[74,70,2],[76,72,4],[80,70,2],[82,69,2],[84,67,2],[86,66,2],[88,67,8],
+     [96,66,2],[98,67,2],[100,69,2],[102,70,2],[104,69,4],[108,67,2],[110,66,2],[112,63,4],[116,62,12]].forEach(([s,m,l])=>W.push({s,i:'pluck',m,l,v:.085}));
+    for(let b=0;b<8;b++){const s=b*16;[[0,'d'],[2,'t'],[6,'t'],[8,'d'],[12,'t'],[14,'h']].forEach(([o,k])=>W.push({s:s+o,i:'drum',k,v:.12}));
+      [[0,38],[8,38],[11,39]].forEach(([o,m])=>W.push({s:s+o,i:'pluck',m,l:3,v:.06}));}
+    [0,32,64,96].forEach(s=>{W.push({s,i:'pad',m:50,l:32,v:.02});W.push({s,i:'pad',m:57,l:32,v:.014});});
+    /* fort: stone and old dust, a slow heartbeat and hijaz bells far away */
+    const Fo=TRACKS.fort.ev;
+    [[0,[38,45]],[32,[39,46]],[64,[38,45]],[96,[37,44]]].forEach(([s,ch])=>ch.forEach(m=>Fo.push({s,i:'pad',m,l:32,v:.03})));
+    [[0,74],[10,75],[20,78],[34,74],[48,72],[62,70],[76,75],[90,74],[104,70],[116,69]].forEach(([s,m])=>Fo.push({s,i:'bell',m,v:.03}));
+    for(let b=0;b<8;b++){const s=b*16;Fo.push({s,i:'drum',k:'d',v:.15});Fo.push({s:s+3,i:'drum',k:'d',v:.09});Fo.push({s:s+8,i:'pluck',m:b%4===1?51:50,l:6,v:.05});}
+    /* bosses: fast hijaz, driving bass and drums */
+    const Bo=TRACKS.boss.ev;
+    for(let b=0;b<8;b++){const s=b*16,up=b%4===3?5:0;
+      [[0,38],[3,38],[6,39],[8,38],[10,42],[12,43],[14,42]].forEach(([o,m])=>Bo.push({s:s+o,i:'bass',m:m+up,l:.18,v:.15}));
+      [[0,'d'],[3,'d'],[4,'t'],[8,'d'],[11,'d'],[12,'t']].forEach(([o,k])=>Bo.push({s:s+o,i:'drum',k,v:.17}));
+      [2,6,10,14].forEach(o=>Bo.push({s:s+o,i:'drum',k:'h',v:.12}));}
+    const bm=[[0,74,2],[2,75,2],[4,78,4],[8,79,2],[10,78,2],[12,75,2],[14,74,2],[16,72,4],[20,74,4],[24,75,8],
+      [32,78,2],[34,79,2],[36,81,4],[40,82,4],[44,81,2],[46,79,2],[48,78,4],[52,75,4],[56,74,8]];
+    bm.forEach(([s,m,l])=>{Bo.push({s,i:'lead',m,l,v:.045});Bo.push({s:s+64,i:'lead',m:m+(s>=32?-2:0),l,v:.05});});
+    [0,32,64,96].forEach((s,i)=>[50,54,57].forEach(m=>Bo.push({s,i:'pad',m:m+(i===3?1:0),l:30,v:.016})));
     Object.values(TRACKS).forEach(T=>{T.at={};T.ev.forEach(e=>{(T.at[e.s]=T.at[e.s]||[]).push(e);});});
   })();
   const mus={name:null,g:null,step:0,next:0};
   function musicTick(){
     let want=null,lvl=1;
-    if(state==='battle'||(state==='fade'&&B)){want=B&&B.ended?null:'battle';}
+    if(state==='battle'||(state==='fade'&&B)){want=B&&B.ended?null:B&&B.boss?'boss':'battle';}
     else if(state==='title'||state==='chapter')want='village';
-    else if(scene.forest||scene.wadi||scene.fort)want='forest';
-    else{want=nightAmount()>.6&&!scene.interior?'forest':'village';if(scene.interior)lvl=.55;}
+    else if(scene.forest)want='forest';
+    else if(scene.wadi)want='wadi';
+    else if(scene.fort)want='fort';
+    else{want=nightAmount()>.6&&!scene.interior?'night':'village';if(scene.interior)lvl=.55;}
     if(want!==mus.name){
       if(mus.g){const og=mus.g;og.gain.setTargetAtTime(.0001,ac.currentTime,.35);setTimeout(()=>{try{og.disconnect();}catch(_){}} ,2500);}
       mus.name=want;mus.g=null;

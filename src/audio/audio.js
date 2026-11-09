@@ -120,6 +120,8 @@ const SFX=(()=>{
     crow:o=>{const v=.04*(o.vol??1);tone({f:520,f2:900,type:'sawtooth',lp:2400,a:.03,dur:.25,v,pan:o.pan,slide:.2});tone({f:900,f2:600,type:'sawtooth',lp:2400,dur:.45,v,d:.27,pan:o.pan});},
     meow:o=>{const v=.04*(o.vol??1);tone({f:620,f2:920,type:'triangle',lp:2600,a:.03,dur:.18,v,pan:o.pan,slide:.15});tone({f:920,f2:520,type:'triangle',lp:2600,dur:.22,v,d:.17,pan:o.pan});},
     flap:o=>{const v=.06*(o.vol??1);for(let i=0;i<7;i++)noise({type:'bandpass',f:900+Math.random()*700,q:1.2,dur:.035,v,d:i*.05,pan:o.pan});},
+    thunder:o=>{const v=o.vol??1;noise({type:'highpass',f:1800,dur:.12,v:.08*v});noise({type:'lowpass',f:420,f2:90,a:.05,dur:2.6,v:.32*v,pan:Math.random()-.5});noise({type:'lowpass',f:200,a:.4,dur:2.2,v:.22*v,d:.5});tone({f:55,f2:38,a:.1,dur:1.6,v:.12*v});},
+    splash:()=>{noise({type:'bandpass',f:1300,f2:600,q:1.2,dur:.14,v:.09});for(let i=0;i<3;i++)tone({f:700+Math.random()*500,f2:1400,dur:.04,v:.025,d:.03+i*.04});},
     grunt:o=>{const v=.06*(o.vol??1);tone({f:110,f2:78,type:'sawtooth',lp:520,a:.04,dur:.45,v,pan:o.pan});noise({type:'lowpass',f:500,a:.04,dur:.3,v:v*.6,pan:o.pan});},
     defeat:()=>arp([392,349,311,262],.28,{type:'triangle',lp:1600,dur:.5,v:.08}),
   };
@@ -200,6 +202,15 @@ const SFX=(()=>{
       mus.step++;mus.next+=sd;
     }
   }
+  let rainG=null,rainF=null,windG=null,windF=null;
+  function loopNoise(type,f,q){const src=ac.createBufferSource();src.buffer=noiseBuf;src.loop=true;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.value=f;fl.Q.value=q;const g=ac.createGain();g.gain.value=0;src.connect(fl);fl.connect(g);g.connect(ambBus);src.start();return [g,fl];}
+  function weatherSound(on){
+    if(typeof WX==='undefined')return;
+    if(!rainG){[rainG,rainF]=loopNoise('lowpass',5200,.4);[windG,windF]=loopNoise('bandpass',420,.9);}
+    const t=ac.currentTime,inside=!!scene.interior;
+    rainG.gain.setTargetAtTime(on?WX.rain*(inside?.07:.16):0,t,.6);rainF.frequency.setTargetAtTime(inside?900:5200,t,.3);
+    windG.gain.setTargetAtTime(on?WX.sand*.22:0,t,.6);windF.frequency.setTargetAtTime(380+180*Math.sin(time*.7)+90*Math.sin(time*1.9),t,.2);
+  }
   function tick(dt){
     if(!ready())return;
     try{musicTick();}catch(err){(window.__sfxErr=window.__sfxErr||[]).push('music: '+err.message);}
@@ -211,6 +222,7 @@ const SFX=(()=>{
     let fv=0;
     if(on&&scene.id==='village'&&!dryVillage()){const d=Math.hypot(hero.x-MAP.fountain.x,(hero.y-MAP.fountain.y)*1.3);fv=Math.max(0,1-d/300)*.14;}
     fountain.gain.setTargetAtTime(fv,ac.currentTime,.25);
+    weatherSound(OPT.ambient!=='off'&&(on||state==='battle'));
     if(!on)return;
     const A=amb,b={bus:ambBus};
     for(const k in A)A[k]-=dt;

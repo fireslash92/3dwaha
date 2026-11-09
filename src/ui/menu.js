@@ -85,7 +85,7 @@ function renderMenu(resetScroll){
 function tabStatus(){
   const ks=['hp','mp','atk','def','agi','wis','luk'];
   const hh=hourNow(),hm=`${AR(Math.floor(hh))}:${AR(String(Math.floor((hh%1)*60)).padStart(2,'0'))}`,outdoor=scene.id==='village'||scene.interior;
-  return `<div class="set" style="padding:6px 0 12px"><div class="grow"><b>الوقت: ${phaseName()}</b><div class="muted">الساعة ${hm}. في الليل تظهر مخلوقات أخرى في الغابة</div></div>${outdoor?`<div class="actions"><button type="button" class="btn" data-act="wait" data-h="${isNight()?7:20}">${isNight()?'استرح حتى الصباح':'استرح حتى الليل'}</button></div>`:''}</div>
+  return `<div class="set" style="padding:6px 0 12px"><div class="grow"><b>الوقت: ${phaseName()}، والطقس ${wxLabel()}</b><div class="muted">الساعة ${hm}. في الليل تظهر مخلوقات أخرى في الغابة</div></div>${outdoor?`<div class="actions"><button type="button" class="btn" data-act="wait" data-h="${isNight()?7:20}">${isNight()?'استرح حتى الصباح':'استرح حتى الليل'}</button></div>`:''}</div>
   <h3>الخصائص</h3><div class="stats">${ks.map(k=>{const b=bonusStat(k);return `<div class="stat"><div class="n"><b>${STAT_NAMES[k]}</b><small>${STAT_NOTES[k]}</small></div><div class="v">${AR(stat(k))}${b?`<em>${num(b)}</em>`:''}</div></div>`;}).join('')}
   <div class="stat"><div class="n"><b>سرعة المشي</b><small>من الرشاقة والمهارات</small></div><div class="v">${AR(Math.round(heroSpeed()/SPEED*100))}٪</div></div></div>
   ${P.flags.aisha?`<h4>عائشة · رفيقة الرحلة</h4><div class="stats">${['hp','mp','atk','def','agi','wis'].map(k=>`<div class="stat"><div class="n"><b>${STAT_NAMES[k]}</b></div><div class="v">${AR(k==='hp'?allyHP():k==='mp'?allyMP():allyStat(k))}${k==='hp'||k==='mp'?`<em> / ${AR(allyStat(k))}</em>`:''}</div></div>`).join('')}</div>`:''}
@@ -174,6 +174,7 @@ const SETS=[
   {k:'camera',name:'متابعة الكاميرا',opts:[['smooth','ناعمة'],['snappy','سريعة']]},
   {k:'quality',name:'جودة الرسوم',note:'الوضع الموفّر يخفف الحمل على البطارية',opts:[['high','عالية'],['saver','موفّرة']]},
   {k:'shake',name:'اهتزاز الشاشة',note:'يهتز المشهد مع الضربات القوية والزلازل. أوقفه إن كان مزعجًا',opts:[['on','تشغيل'],['off','إيقاف']]},
+  {k:'weather',name:'الطقس',note:'مطر وضباب وعواصف رملية تتغير من يوم لآخر',opts:[['on','متقلّب'],['off','صحو دائمًا']]},
   {k:'hud',name:'عدّاد المهمة',opts:[['show','ظاهر'],['hide','مخفي']]},
   {k:'minimap',name:'الخريطة الصغيرة',note:'المسها لتكبيرها أو تصغيرها',opts:[['show','ظاهرة'],['hide','مخفية']]},
   {k:'encounters',name:'تكرار المعارك في الغابة',opts:[['low','قليلة'],['normal','عادية'],['high','كثيرة']]},

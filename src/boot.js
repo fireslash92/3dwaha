@@ -23,6 +23,6 @@ function start(data){
 }
 window.claude?.hot?.snapshot?.(()=>snapshot());
 window.__game={get state(){return state;},get scene(){return scene.id;},get target(){return target;},get met(){return met.size;},get quest(){return questStarted;},get chapter(){return chapterDone;},
-  hero,keys,NPCS,MAP,SCENES,resolve,act,collidersFor,drawPerson,drawHero,LOOKS,openMenu,closeMenu,stat,heroSpeed,startEncounter,get B(){return B;},FOREST,setChapter(v){chapterDone=v;questStarted=true;syncAisha();},FORT,WADI,get gateSeq(){return gateSeq;},openGate,nightAmount,SFX,get P(){return P;},OPT,get toast(){return toastKey;},get view(){return view;},
+  hero,keys,NPCS,MAP,SCENES,resolve,act,collidersFor,drawPerson,drawHero,LOOKS,openMenu,closeMenu,stat,heroSpeed,startEncounter,get B(){return B;},FOREST,setChapter(v){chapterDone=v;questStarted=true;syncAisha();},FORT,WADI,get gateSeq(){return gateSeq;},openGate,nightAmount,SFX,WX,wxNow,wxPlan,get P(){return P;},OPT,get toast(){return toastKey;},get view(){return view;},
   step(dt,n=1){for(let i=0;i<n;i++)update(dt);}};
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});

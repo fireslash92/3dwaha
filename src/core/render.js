@@ -19,6 +19,7 @@ function render(){
   if(srcW>0&&srcH>0)g.drawImage(scene.ground,x0*S,y0*S,srcW,srcH,x0,y0,srcW/S,srcH/S);
   drawGroundFeel(g);
   const t=time,m=30,L=cx-m,T=cy-m,Rr=cx+vw+m,Bt=cy+vh+m;
+  drawPuddles(g,L,T,Rr,Bt);drawGroundRain(g,L,T,Rr,Bt);
   if(scene.id==='village'){
     const F=MAP.falaj;
     if(dryVillage()){g.fillStyle='#7d7262';g.fillRect(F.x+4,F.y,F.w-8,F.h-4);g.fillStyle='rgba(60,50,40,.4)';for(let i=0;i<8;i++)g.fillRect(F.x+6+(i%3)*3,F.y+i*26,6,1);}
@@ -37,6 +38,7 @@ function render(){
   drawBunting(g,t);
   drawAirFeel(g);
   drawNight(g,cx,cy);
+  drawWeatherScreen(g,false);
   for(const n of NPCS){if(n.scene!==scene.id||target&&target.npc===n&&state==='play')continue;const m=questMark(n);if(m)drawQuestMark(g,n,m,t);else if(n.shop&&met.has(n.id)&&Math.hypot(hero.x-n.x,hero.y-n.y)<150)drawShopMark(g,n,t);}
   if(questStarted&&hasSkill('seeker'))for(const n of NPCS){
     if(n.scene!==scene.id||n===SALEM||n.noMeet||met.has(n.id)||(target&&target.npc===n))continue;

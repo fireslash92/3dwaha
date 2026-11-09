@@ -70,7 +70,7 @@ function findTarget(){
 }
 function update(dt){
   time+=dt;
-  lifeTick(dt);
+  lifeTick(dt);weatherTick(dt);puddleFeel(dt);
   for(const n of NPCS)if(n.route&&n.route.length&&n.scene!==scene.id)walkRoute(n,dt);
   if(talkCooldown>0)talkCooldown-=dt;
   if(state==='play'||state==='dialog')P.clock=(P.clock??540)+dt*DAY_RATE;

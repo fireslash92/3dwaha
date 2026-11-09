@@ -4,7 +4,7 @@
 /* =========================================================
    OPTIONS & SAVE
    ========================================================= */
-const OPT={text:'normal',controls:'normal',hand:'left',camera:'smooth',quality:'high',hud:'show',sound:'on',volume:'mid',ambient:'on',music:'on',minimap:'show',encounters:'normal',bspeed:'normal',shake:matchMedia('(prefers-reduced-motion: reduce)').matches?'off':'on'};
+const OPT={text:'normal',controls:'normal',hand:'left',camera:'smooth',quality:'high',hud:'show',sound:'on',volume:'mid',ambient:'on',music:'on',minimap:'show',encounters:'normal',bspeed:'normal',weather:'on',shake:matchMedia('(prefers-reduced-motion: reduce)').matches?'off':'on'};
 const SAVE_KEY='ayn-alwadi-save-v1',OPT_KEY='ayn-alwadi-options-v1';
 function store(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,JSON.stringify(v));return true;}catch(_){return false;}}
 function load(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(_){return null;}}

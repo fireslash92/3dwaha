@@ -29,6 +29,7 @@
  "src/ui/bestiary.js",
  "src/world/fort.js",
  "src/world/life.js",
+ "src/world/weather.js",
  "src/ui/minimap.js",
  "src/core/save.js",
  "src/ui/menu.js",

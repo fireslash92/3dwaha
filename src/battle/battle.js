@@ -568,6 +568,7 @@ function renderBattle(){
   g.textAlign='center';g.textBaseline='middle';
   for(const p of B.pop){const k=time-p.t0,big=p.col==='#ffd36b',sz=(big?20:15)*(k<.12?1.75-k/.12*.75:1);g.globalAlpha=Math.min(1,(1-k)*2);g.font=`800 ${sz}px system-ui,-apple-system,"SF Arabic",sans-serif`;g.lineWidth=3;g.strokeStyle='rgba(30,15,5,.85)';g.strokeText(p.txt,p.x,p.y-k*22);g.fillStyle=p.col;g.fillText(p.txt,p.x,p.y-k*22);}
   g.globalAlpha=1;
+  drawWeatherScreen(g,true);
   const fl=B.fx.find(q=>q.kind==='flash'&&time-q.t0<.4);
   if(fl){g.setTransform(1,0,0,1,0,0);g.fillStyle=`rgba(255,240,200,${.8*(1-(time-fl.t0)/.4)})`;g.fillRect(0,0,canvas.width,canvas.height);}
 }

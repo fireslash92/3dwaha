@@ -31,6 +31,10 @@ function slotFor(n){
   const h=hourNow();let pick=S[S.length-1];
   for(const e of S)if(h>=e[0])pick=e;
   if(n===PEDDLER&&Math.floor((P.clock??540)/1440)%2===1)return [0,'none'];
+  if((pick[1]==='village'||pick[1]==='wander')&&rainingInVillage()){ // everyone runs home from the rain
+    if(n===PEDDLER)return [0,'none'];
+    const home=S.filter(e=>INTERIORS[e[1]]).pop();if(home)return [-1,...home.slice(1)];
+  }
   return pick;
 }
 function planRoute(n,slot){
@@ -62,11 +66,11 @@ function walkRoute(n,dt){
   if(w.tp||n.scene!==scene.id||w.scene!==n.scene){n.scene=w.scene;n.x=w.x;n.y=w.y;n.route.shift();n.stuck=0;if(!n.route.length)finishRoute(n);return;}
   const dx=w.x-n.x,dy=w.y-n.y,d=Math.hypot(dx,dy);
   if(d<3){n.route.shift();if(!n.route.length)finishRoute(n);return;}
-  const step=Math.min(d,44*dt),p=resolve(n.x+dx/d*step,n.y+dy/d*step,NPC_R,collidersFor(n),scene.W,scene.H);
+  const step=Math.min(d,44*dt*(rainingInVillage()?1.9:1)),p=resolve(n.x+dx/d*step,n.y+dy/d*step,NPC_R,collidersFor(n),scene.W,scene.H);
   const moved=Math.hypot(p.x-n.x,p.y-n.y);n.x=p.x;n.y=p.y;n.moving=true;n.phase+=dt*9;n.dir=chooseDir({x:dx/d,y:dy/d},n.dir);
   if(moved<step*.3){n.stuck=(n.stuck||0)+dt;if(n.stuck>1.2){n.x=w.x;n.y=w.y;n.stuck=0;}}else n.stuck=0;
 }
-function hintFor(n){return INTERIORS[n.scene]?`الآن داخل ${INTERIORS[n.scene].name}`:n.scene==='village'?HINTS[n.id]:HINTS[n.id];}
+function hintFor(n){return INTERIORS[n.scene]?`الآن داخل ${INTERIORS[n.scene].name}${rainingInVillage()?' هربًا من المطر':''}`:n.scene==='village'?HINTS[n.id]:HINTS[n.id];}
 
 /* =========================================================
    ANIMALS
@@ -87,7 +91,7 @@ WADI.colliders.push({t:'c',x:330,y:366,r:24,tag:'camel'});
 const COOP={x:1072,y:500};
 MAP.colliders.push({t:'r',x:COOP.x-20,y:COOP.y-20,w:40,h:20,tag:'coop'});
 function animalAsleep(a){const n=nightAmount();return n>.7&&(a.kind==='goat'||a.kind==='cat');}
-function animalHidden(a){const n=nightAmount();return n>.5&&(a.kind==='hen'||a.kind==='pigeon');}
+function animalHidden(a){const n=nightAmount(),wet=a.scene==='village'&&WX.rain>.25;return (n>.5||wet)&&(a.kind==='hen'||a.kind==='pigeon')||wet&&a.kind==='cat';}
 function animalsTick(dt){
   if(state!=='play'&&state!=='dialog')return;
   for(const a of ANIMALS){

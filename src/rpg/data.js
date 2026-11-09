@@ -56,4 +56,4 @@ function bonusStat(k,eq=P.eq){let b=0;for(const sl in eq){const it=eq[sl]&&ITEMS
 const stat=(k,eq)=>baseStat(k)+bonusStat(k,eq);
 const curHP=()=>Math.min(P.hp==null?stat('hp'):P.hp,stat('hp'));
 const curMP=()=>Math.min(P.mp==null?stat('mp'):P.mp,stat('mp'));
-const heroSpeed=()=>SPEED*(1+(stat('agi')-6)*.012)*(hasSkill('stride')?1.12:1);
+const heroSpeed=()=>SPEED*(1+(stat('agi')-6)*.012)*(hasSkill('stride')?1.12:1)*wxSlow();

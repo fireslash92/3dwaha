@@ -24,5 +24,5 @@ function noteLore(type,el){P.lore=P.lore||{};(P.lore[type]=P.lore[type]||{})[el]
 function elemMult(e,el){
   const m=e.d.weak===el?1.5:e.d.resist===el?.6:1;
   if(m!==1){noteLore(e.type,el);popup(e.x,eTop(e)-18,m>1?'نقطة ضعف!':'مقاومة','#ffd36b');}
-  return m;
+  return m*wxElem(el);
 }

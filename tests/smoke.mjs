@@ -58,12 +58,16 @@ try{
     ks.forEach(k=>G.keys[k]=false);return worst;});
   ok('التصادم في القرية',collisions<.5,`أقصى تداخل ${collisions.toFixed(2)}`);
 
+  // the random walk above may have wandered into the forest or a house: come back to the village first
+  await page.waitForTimeout(700);
+  for(let k=0;k<3&&await page.evaluate(()=>__game.scene)!=='village';k++){
+    await page.evaluate(()=>{const G=__game;if(G.scene==='forest'){G.hero.x=320;G.hero.y=1185;G.keys.down=true;}else{G.hero.x=224;G.hero.y=290;G.keys.down=true;}G.step(1/60,20);G.keys.down=false;});await page.waitForTimeout(700);}
   // fishing: buy nothing, just hand over a rod and let a simple bot reel in
   const fished=await page.evaluate(async()=>{const G=__game,F=G.MAP.falaj;G.P.inv.rod=1;
     for(let tries=0;tries<3&&!Object.keys(G.P.fishLog||{}).length;tries++){
       G.hero.x=F.x+F.w+14;G.hero.y=F.y+F.h/2;G.step(1/60,2);await new Promise(r=>setTimeout(r,500));G.step(1/60,2);G.act();
       for(let k=0;k<1500&&G.state==='fish';k++){const f=G.FG;if(f&&f.phase==='bite')G.act();if(f&&f.phase==='reel')G.setHold(f.f>f.z+f.zw*.5);await new Promise(r=>setTimeout(r,16));}
-      G.setHold(false);}
+      G.setHold(false);let q=0;while(G.state==='dialog'&&q++<12)G.act();if(G.state==='shop')G.closeShop&&G.closeShop();}
     return Object.keys(G.P.fishLog||{}).length>0&&G.state==='play';});
   ok('صيد سمكة من الفلج',fished);
   await page.evaluate(()=>{const G=__game;G.OPT.bspeed='fast';G.hero.x=576;G.hero.y=110;G.keys.up=true;G.step(1/60,10);G.keys.up=false;});await page.waitForTimeout(700);

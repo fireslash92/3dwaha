@@ -15,7 +15,7 @@ function makeMonster(id,o){
   const L=o.lv,R=ROLES[o.boss?'boss':o.role||'brute'];
   ENEMIES[id]=Object.assign({
     name:o.name,lv:L,art:o.art,pal:o.pal,opt:o.opt||{},
-    hp:Math.round((16+6*L)*R.hp*(o.hpK||1)),atk:Math.round((3+1.45*L)*R.atk),mag:Math.round((4+1.15*L)*R.mag),def:Math.round((1+1.15*L)*R.def),agi:Math.round((5+.45*L)*R.agi),
+    hp:Math.round((16+6*L)*R.hp*(o.hpK||1)*(o.boss?1:1+L/60)),atk:Math.round((3+1.45*L)*R.atk),mag:Math.round((4+1.15*L)*R.mag),def:Math.round((1+1.15*L)*R.def),agi:Math.round((5+.45*L)*R.agi),
     xp:Math.round((.55*Math.pow(L,1.78)+8)*3*(o.boss?12:1)),gold:Math.round((4+1.6*L)*(o.boss?20:1)),
     evade:R.evade||0,fly:!!o.fly,boss:!!o.boss,weak:o.weak,resist:o.resist,ai:o.ai||'phys',move:o.move||['هجمة قوية',.25,1.35],drop:o.drop,status:o.ai==='poison'?'poison':o.ai==='sleep'?'sleep':undefined,
     sfx:o.sfx,intro:o.intro,onWin:o.onWin,after:o.after,moves:o.moves,
@@ -164,3 +164,25 @@ async function genAbility(id,a,cmd){
 }
 
 Object.assign(MONSTER_ART,{beast:artBeast,flyer:artFlyer,spirit:artSpirit,elemental:artElemental,blob:artBlob,crab:artCrab,warrior:artWarrior,yeti:artYeti});
+
+function artScorp(g,t,p){
+  const c=Math.sin(t*3);g.fillStyle=p.dark;for(let i=0;i<4;i++){g.fillRect(-14+i*7,-6,2,7);}
+  g.fillStyle=p.body;ell(g,0,-10,18,8);g.fill();g.fillStyle=p.light;ell(g,-2,-13,10,3);g.fill();
+  g.strokeStyle=p.body;g.lineWidth=6;g.lineCap='round';g.beginPath();g.moveTo(-16,-10);g.quadraticCurveTo(-34,-20,-30,-40+c*2);g.quadraticCurveTo(-24,-52,-10,-46);g.stroke();
+  g.fillStyle=p.sting;poly(g,[-10,-50,-2,-44,-10,-42]);
+  g.fillStyle=p.body;g.save();g.translate(22,-14);g.rotate(-.3+c*.1);ell(g,0,0,8,5);g.fill();g.fillStyle=p.dark;poly(g,[4,-2,12,-6,7,2]);g.restore();
+  g.fillStyle='#1c120a';circ(g,10,-14,1.6);circ(g,14,-13,1.6);
+}
+function artIfrit(g,t,p,o,e){
+  const y=Math.sin(t*1.6)*3,hot=e&&e.enraged,fl=.8+.2*Math.sin(t*10);
+  const gr=g.createRadialGradient(0,-80+y,10,0,-80+y,110);gr.addColorStop(0,`rgba(${p.glow},${.5*fl})`);gr.addColorStop(1,`rgba(${p.glow},0)`);g.fillStyle=gr;g.fillRect(-110,-190+y,220,220);
+  g.fillStyle=p.dark;g.beginPath();g.moveTo(-30,-10);for(let i=0;i<=6;i++){const x=-30+i*10;g.lineTo(x,-10-((i%2)?24:4)*fl-Math.sin(t*8+i)*4);}g.lineTo(30,-10);g.lineTo(26,-60+y);g.lineTo(-26,-60+y);g.closePath();g.fill();
+  g.fillStyle=p.body;g.beginPath();g.moveTo(-40,-60+y);g.quadraticCurveTo(-48,-120+y,0,-132+y);g.quadraticCurveTo(48,-120+y,40,-60+y);g.closePath();g.fill();
+  g.fillStyle=p.light;ell(g,0,-96+y,22,16);g.fill();
+  [-1,1].forEach(s=>{g.save();g.translate(s*42,-112+y);g.rotate(s*(.5+Math.sin(t*2)*.1));g.fillStyle=p.body;ell(g,s*8,24,11,28);g.fill();g.fillStyle=`rgba(${p.glow},.9)`;circ(g,s*10,52,9*fl);g.restore();});
+  g.fillStyle=p.body;ell(g,0,-146+y,20,18);g.fill();
+  g.fillStyle=p.horn;poly(g,[-12,-158+y,-30,-190+y,-6,-162+y]);poly(g,[12,-158+y,30,-190+y,6,-162+y]);
+  g.fillStyle=hot?'#fff2a0':p.eye;ell(g,-7,-148+y,4,2.4);g.fill();ell(g,7,-148+y,4,2.4);g.fill();
+  g.fillStyle='#1a0a0a';ell(g,0,-136+y,8,3+Math.abs(Math.sin(t*2))*2);g.fill();
+}
+Object.assign(MONSTER_ART,{scorp:artScorp,ifrit:artIfrit});

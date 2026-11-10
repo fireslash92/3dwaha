@@ -41,6 +41,7 @@
  "src/story/chapter5.js",
  "src/world/diving.js",
  "src/story/chapter6.js",
+ "src/story/chapter7.js",
  "src/ui/minimap.js",
  "src/core/save.js",
  "src/ui/menu.js",

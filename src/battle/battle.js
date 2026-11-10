@@ -81,7 +81,7 @@ function startEncounter(opts){
   SFX.play(opts.boss?'bossIntro':'encounter');
   startTransition(!!opts.boss,()=>{
     B={enemies,bossType:opts.boss?types[0]:null,st:{hero:{poison:0,sleep:0},aisha:{poison:0,sleep:0}},money:0,pop:[],fx:[],m:{hero:{act:null,actT:-9,hitT:-9,guard:false},aisha:{act:null,actT:-9,hitT:-9,guard:false}},palm:0,weave:0,
-       busy:true,mode:'main',actor:'hero',cmds:{},pending:null,ended:false,xp:0,drops:[],bg:null,result:null,boss:!!opts.boss,round:0};
+       busy:true,mode:'main',actor:'hero',cmds:{},pending:null,ended:false,xp:0,drops:[],bg:null,result:null,boss:!!opts.boss,arena:opts.arena||null,round:0};
     layoutEnemies();
     gameEl.classList.add('battling');battleEl.hidden=false;state='battle';
     renderParty();bCmds.innerHTML='';
@@ -123,7 +123,7 @@ function showCmds(mode){
     if(who==='hero'){
       const full=(P.gauge||0)>=100,sk=ABILITIES.filter(a=>a.type==='skill'&&abilityOpen(a)).length,mg=ABILITIES.filter(a=>a.type==='magic'&&abilityOpen(a)).length;
       html=`<button type="button" data-c="attack">هجوم</button><button type="button" data-c="skills"${sk?'':' disabled'}>مهارات</button><button type="button" data-c="magic"${mg?'':' disabled'}>سحر</button><button type="button" data-c="defend">دفاع</button>
-        <button type="button" data-c="items"${items?'':' disabled'}>أغراض</button><button type="button" data-c="flee"${B.boss||!first?' disabled':''}>هروب</button>
+        <button type="button" data-c="items"${items?'':' disabled'}>أغراض</button><button type="button" data-c="flee"${B.boss||B.arena||!first?' disabled':''}>هروب</button>
         <button type="button" class="special" data-c="special"${full?'':' disabled'} style="grid-column:span 2">خاصة<small>${full?SPECIAL.name:'العزيمة '+AR(Math.floor(P.gauge||0))+'٪'}</small></button>`;
     }else{
       html=`<button type="button" data-c="attack">هجوم</button><button type="button" data-c="spells">سحر</button><button type="button" data-c="defend">دفاع</button><button type="button" data-c="items"${items?'':' disabled'}>أغراض</button>`+
@@ -412,11 +412,12 @@ async function checkEnd(){
 }
 function endBattle(){
   if(!B)return;
-  const result=B.result,boss=B.boss,bossType=B.bossType;
+  const result=B.result,boss=B.boss,bossType=B.bossType,arena=B.arena;
   B.busy=true;bCmds.querySelectorAll('button').forEach(b=>b.disabled=true);
   fadeEl.classList.add('on');
   setTimeout(()=>{
     battleEl.hidden=true;bMsg.classList.remove('show');gameEl.classList.remove('battling');B=null;resetMeter();
+    if(arena){arenaAfter(result);saveGame();return;}
     if(result==='lose'&&scene.area){areaLose(boss);saveGame();return;}
     if(result==='lose'){
       P.hp=null;P.mp=null;P.ally={hp:null,mp:null};P.gauge=0;

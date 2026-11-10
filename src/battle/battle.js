@@ -26,6 +26,7 @@ const battleEl=$('battle'),bMsg=$('bMsg'),bCmds=$('bCmds'),bParty=$('bParty'),bU
 let B=null;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 function enemyGroup(){
+  if(scene.area)return areaGroup();
   const y=hero.y,pick=a=>a[(Math.random()*a.length)|0];
   if(scene.fort)return y>560?pick([['soldier'],['spider'],['soldier','scorpion'],['spider','spider'],['soldier','spider']]):pick([['soldier','soldier'],['spider','soldier','spider'],['soldier','spider'],['soldier','soldier','spider']]);
   if(scene.wadi){if(isNight()&&Math.random()<.35)return pick([['bat','viper'],['bat','bat','scorpion']]);return hero.x<560?pick([['scorpion'],['viper'],['lizard','scorpion'],['viper','lizard']]):pick([['scorpion','viper'],['scorpion','scorpion'],['viper','viper'],['scorpion','viper','lizard']]);}
@@ -88,6 +89,7 @@ function startEncounter(opts){
     (async()=>{
       if(B.bossType==='golem'){await say('تهتز الجدران، وتتجمع حجارة الحصن في هيئة عملاق عظيم!',1800);await say('لا مفرّ من هذه المعركة.',1100);}
       else if(B.bossType==='serpent'){await say('تنهض حيّة العين من الماء، وجسدها يلتف حول الصخور!',1800);await say('لا مفرّ من هذه المعركة.',1100);}
+      else if(B.boss&&ENEMIES[B.bossType].intro){for(const l of ENEMIES[B.bossType].intro)await say(l,1700);await say('لا مفرّ من هذه المعركة.',1100);}
       else if(B.boss){await say('ينهض حارس النور من الحجر، وجناحاه يملآن الفسحة ضوءًا!',1800);await say('لا مفرّ من هذه المعركة.',1100);}
       else await say(enemies.length===1?`ظهر ${enemies[0].name}!`:'ظهرت مجموعة من الأعداء!',1100);
       if(!P.flags.tut1){P.flags.tut1=1;B.tutor=true;
@@ -274,6 +276,7 @@ async function heroAction(cmd){
   setMP('hero',curMP()-a.mp);renderParty();
   if(a.id==='falcon'){await strike('hero',retarget(cmd.target),1.7,'ضربة الصقر',.15);return;}
   if(a.id==='palm'){SFX.play('buff');B.palm=3;fx('palm',B.hx,B.hy);await say('صمود النخلة: ارتفع دفاع ناصر ثلاث جولات.',900);return;}
+  if(a.gen)return genAbility('hero',a,cmd);
   if(a.id==='sweep'){anim('hero','lunge');SFX.play('swing');await wait(220);SFX.play('hit');for(const e of aliveEnemies()){const dmg=rollDmg((stat('atk')*2-eDef(e))*.85*(e.veil>0?.5:1)*elemMult(e,'phys'));e.hp-=dmg;e.hitT=time;fx('slash',e.x,eMid(e));popup(e.x,eTop(e),AR(dmg),'#fff');}await say('ضربة دوّارة تصيب الجميع!',850);for(const e of B.enemies)await killCheck(e);return;}
   anim('hero','cast');
   if(a.id==='spark'){const e=retarget(cmd.target);fx('fireball',B.hx-20,B.hy-40,{tx:e.x,ty:eMid(e)});SFX.play('swing');await wait(380);SFX.play('fire');const dmg=await magicHit(e,stat('wis')*2.4+8,'fire');await say(`شرارة تحرق ${e.name} — ${AR(dmg)} ضررًا.`,820);await killCheck(e);return;}
@@ -287,6 +290,7 @@ async function allyAction(cmd){
   const s=cmd.sp;if(allyMP()<s.mp){await say('طاقة عائشة لا تكفي.',700);return;}
   setMP('aisha',allyMP()-s.mp);anim('aisha','cast');renderParty();
   const w=allyStat('wis');
+  if(s.gen)return genAbility('aisha',s,cmd);
   if(s.id==='dew'){const t=cmd.ally&&alive(cmd.ally)?cmd.ally:'aisha';SFX.play('heal');B.st[t].poison=0;B.st[t].sleep=0;const b=mHP(t);setHP(t,b+w*2.6+14);healPop(t,mHP(t)-b);await say(`لمسة الندى تعيد إلى ${NAMES[t]} ${AR(mHP(t)-b)} من الصحة.`,900);return;}
   if(s.id==='weave'){SFX.play('buff');B.weave=3;fx('palm',B.hx,B.hy);fx('palm',B.ax,B.ay);await say('خيوط السدو تلتف حول الفريق، فيرتفع دفاعه ثلاث جولات.',1000);return;}
   if(s.id==='revive'){const t=cmd.ally;if(!t||alive(t)){await say('لا أحد يحتاج إلى نفَس الحياة الآن.',800);setMP('aisha',allyMP()+s.mp);return;}SFX.play('heal');setHP(t,mStat(t,'hp')*.4);healPop(t,mHP(t));await say(`نفَس الحياة يعيد ${NAMES[t]} إلى المعركة!`,1000);return;}
@@ -296,20 +300,21 @@ function pickTarget(){const ms=members().filter(alive);if(ms.length<2)return ms[
 function hurt(id,dmg){SFX.play('hurt');shake(dmg>=mStat(id,'hp')*.18?6:3,.24);buzz(dmg>=mStat(id,'hp')*.18?45:20);if(B.st[id].sleep>0){B.st[id].sleep=0;}setHP(id,mHP(id)-dmg);B.m[id].hitT=time;const p=mPos(id);popup(p.x,p.y-(id==='hero'?86:72),AR(dmg),'#ff8a7a');if(id==='hero')P.gauge=Math.min(100,(P.gauge||0)+dmg*.8);renderParty();}
 async function fallenCheck(id){if(!alive(id))await say(`${id==='hero'?'سقط ناصر!':'سقطت عائشة!'}`,900);}
 async function enemyAction(e){
+  if(e.d.art&&e.d.boss)return genBossAction(e);
   if(e.type==='serpent')return serpentAction(e);
   if(e.type==='golem')return golemAction(e);
   if(e.d.boss)return bossAction(e);
   const [mvName,mvChance,mvMult]=e.d.move,special=Math.random()<mvChance,tgt=pickTarget();if(!tgt)return;
-  e.actT=time;SFX.play({wolf:special?'growl':'swing',bat:special?'screech':'swing',lizard:special?'hiss':'swing',wisp:special?'eMagic':'swing',scorpion:special?'hiss':'swing',viper:special?'hiss':'swing',spider:special?'bite':'swing',soldier:'swing'}[e.type]||'swing');await wait(260);
+  e.actT=time;SFX.play({wolf:special?'growl':'swing',bat:special?'screech':'swing',lizard:special?'hiss':'swing',wisp:special?'eMagic':'swing',scorpion:special?'hiss':'swing',viper:special?'hiss':'swing',spider:special?'bite':'swing',soldier:'swing'}[e.type]||e.d.sfx&&special&&e.d.sfx||'swing');await wait(260);
   if(e.type==='wolf'&&special)SFX.play('bite');
   const tp=mPos(tgt);
-  if(e.type==='viper'&&special){
+  if((e.type==='viper'||e.d.ai==='sleep')&&special){
     fx('orb',e.x+10,e.y-30,{tx:tp.x,ty:tp.y-30});await wait(380);
     if(Math.random()<.75-mStat(tgt,'wis')*.01){B.st[tgt].sleep=2;popup(tp.x,tp.y-90,'نعاس','#c9b8ff');await say(`${e.name} تنفث النعاس على ${NAMES[tgt]}، ${tgt==='hero'?'فيغفو':'فتغفو'}!`,1000);}
     else await say(`${e.name} تنفث النعاس، لكن ${NAMES[tgt]} ${tgt==='hero'?'يقاومه':'تقاومه'}.`,850);
     return;
   }
-  if(e.type==='wisp'&&special){
+  if((e.type==='wisp'||e.d.ai==='magic')&&special){
     fx('orb',e.x+10,e.y-30,{tx:tp.x,ty:tp.y-30});await wait(380);
     let dmg=rollDmg(e.d.mag*1.4-mStat(tgt,'wis')*.4);if(B.m[tgt].guard)dmg=Math.ceil(dmg/2);
     hurt(tgt,dmg);await say(`${e.name} يطلق ${mvName} على ${NAMES[tgt]} — ${AR(dmg)} ضررًا.`,850);await fallenCheck(tgt);return;
@@ -318,8 +323,8 @@ async function enemyAction(e){
   if(Math.random()<evade){SFX.play('miss');popup(tp.x,tp.y-80,'تفادٍ','#e9dcc5');await say(`${NAMES[tgt]} ${tgt==='hero'?'يتفادى':'تتفادى'} هجمة ${e.name}.`,700);return;}
   let dmg=rollDmg((e.d.atk*1.8-mDef(tgt))*(special?mvMult:1));if(B.m[tgt].guard)dmg=Math.max(1,Math.ceil(dmg/2));
   hurt(tgt,dmg);
-  if((e.type==='scorpion'||e.type==='spider')&&special&&alive(tgt)){B.st[tgt].poison=4;popup(tp.x,tp.y-100,'سمّ','#b5e07b');}
-  if(e.type==='bat'&&special){const h=Math.min(e.max-e.hp,Math.ceil(dmg*.6));e.hp+=h;popup(e.x,e.y-56,'+'+AR(h),'#7be08a');}
+  if((e.type==='scorpion'||e.type==='spider'||e.d.ai==='poison')&&special&&alive(tgt)){B.st[tgt].poison=4;popup(tp.x,tp.y-100,'سمّ','#b5e07b');}
+  if((e.type==='bat'||e.d.ai==='drain')&&special){const h=Math.min(e.max-e.hp,Math.ceil(dmg*.6));e.hp+=h;popup(e.x,e.y-56,'+'+AR(h),'#7be08a');}
   await say(`${e.name}${special?' يستخدم '+mvName:' يهاجم'} ${NAMES[tgt]} — ${AR(dmg)} ضررًا.`,850);
   await fallenCheck(tgt);
 }
@@ -385,12 +390,13 @@ async function checkEnd(){
     B.ended=true;B.result='win';members().forEach(id=>{anim(id,'win');if(!alive(id))setHP(id,1);});
     const before=levelOf(P.xp);P.xp+=B.xp;const after=levelOf(P.xp);
     B.drops.forEach(id=>{P.inv[id]=(P.inv[id]||0)+1;});
-    SFX.play('victory');await say(B.boss?(B.bossType==='golem'?'انتصرتم على عملاق الحصن!':B.bossType==='serpent'?'انتصرتم على حيّة العين!':'انتصرتم على حارس النور!'):'انتصرت!',900);
+    SFX.play('victory');await say(B.boss?(ENEMIES[B.bossType].art?`انتصرتم على ${ENEMIES[B.bossType].name}!`:B.bossType==='golem'?'انتصرتم على عملاق الحصن!':B.bossType==='serpent'?'انتصرتم على حيّة العين!':'انتصرتم على حارس النور!'):'انتصرت!',900);
     P.money+=B.money;
     let msg=`حصلت على ${AR(B.xp)} خبرة و${baisa(B.money)}.`;
     if(B.drops.length)msg+=' وجدت: '+B.drops.map(id=>ITEMS[id].name).join('، ')+'.';
     if(B.boss&&B.bossType==='golem'){P.flags.boss3=1;['crown','shard3'].forEach(id=>P.inv[id]=(P.inv[id]||0)+1);P.inv.honey=(P.inv.honey||0)+2;msg+=' وعلى المنصة وجدتم الشظية الثالثة وتاج الحصن.';$('menuDot').hidden=false;}
     else if(B.boss&&B.bossType==='serpent'){P.flags.boss2=1;['silverblade','shard2'].forEach(id=>P.inv[id]=(P.inv[id]||0)+1);P.inv.honey=(P.inv.honey||0)+2;msg+=' وفي قاع العين وجدتم خنجر الفضة والشظية الثانية.';$('menuDot').hidden=false;}
+    else if(B.boss&&ENEMIES[B.bossType].onWin){msg+=ENEMIES[B.bossType].onWin();$('menuDot').hidden=false;}
     else if(B.boss){P.flags.boss=1;['lightstaff','shard'].forEach(id=>P.inv[id]=(P.inv[id]||0)+1);P.inv.dates=(P.inv.dates||0)+2;msg+=' وفي مكان الحارس وجدت عصا النور وشظية نجمة.';$('menuDot').hidden=false;}
     if(after>before){
       P.hp=null;P.mp=null;P.ally={hp:null,mp:null};SFX.play('levelUp',{d:1.6});
@@ -411,12 +417,13 @@ function endBattle(){
   fadeEl.classList.add('on');
   setTimeout(()=>{
     battleEl.hidden=true;bMsg.classList.remove('show');gameEl.classList.remove('battling');B=null;resetMeter();
+    if(result==='lose'&&scene.area){areaLose(boss);saveGame();return;}
     if(result==='lose'){
       P.hp=null;P.mp=null;P.ally={hp:null,mp:null};P.gauge=0;
       scene=SCENES.village;ensureScene(scene);hero.x=576;hero.y=530;hero.dir='up';snapCamera();resetTrail();
       state='play';talkCooldown=.4;fadeEl.classList.remove('on');
       notify(boss?'وجدكم سالم عند طرف الغابة<small>الحارس قوي. ارفع مستواك واشرب من النافورة، ثم عُد إليه</small>':'وجدك سالم عند طرف الغابة وأعادك إلى القرية<small>عادت إليكم صحتكم كاملة</small>',3.8);
-    }else{state='play';talkCooldown=.3;fadeEl.classList.remove('on');if(result==='win'&&boss)setTimeout(bossType==='golem'?()=>notify('اجتمعت الشظايا الثلاث!<small>خذاها إلى حجر النور في قلب الغابة</small>',4.2):bossType==='serpent'?openChapter3:openChapter2,500);}
+    }else{state='play';talkCooldown=.3;fadeEl.classList.remove('on');if(result==='win'&&boss)setTimeout(ENEMIES[bossType].after?ENEMIES[bossType].after:bossType==='golem'?()=>notify('اجتمعت الشظايا الثلاث!<small>خذاها إلى حجر النور في قلب الغابة</small>',4.2):bossType==='serpent'?openChapter3:openChapter2,500);}
     saveGame();
   },320);
 }
@@ -425,7 +432,7 @@ function battleBackdrop(){
   if(B.bg&&B.bg.width===w&&B.bg.height===h)return B.bg;
   const cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d');
   const {sc,oy}=stageDims(),d=view.dpr,hz=(oy+150*sc)*d,R=mulberry(31),W2=scene.wadi||scene.fort,nt=nightAmount();
-  const C=W2?{s0:'#6b3f2a',s1:'#d39a62',r0:'#7a4a32',r1:'#a8694a',g0:'#d8bf8e',g1:'#b8956a',grass:'rgba(120,90,55,.5)'}:{s0:'#16261a',s1:'#2e4a2c',r0:'#1b2c1b',r1:'#24391f',g0:'#4f6e37',g1:'#2c421e',grass:'rgba(30,50,20,.6)'};
+  const C=scene.area&&BIOMES[scene.biome].bt?BIOMES[scene.biome].bt:W2?{s0:'#6b3f2a',s1:'#d39a62',r0:'#7a4a32',r1:'#a8694a',g0:'#d8bf8e',g1:'#b8956a',grass:'rgba(120,90,55,.5)'}:{s0:'#16261a',s1:'#2e4a2c',r0:'#1b2c1b',r1:'#24391f',g0:'#4f6e37',g1:'#2c421e',grass:'rgba(30,50,20,.6)'};
   const sky=g.createLinearGradient(0,0,0,hz);sky.addColorStop(0,C.s0);sky.addColorStop(1,C.s1);g.fillStyle=sky;g.fillRect(0,0,w,hz+2);
   g.fillStyle='rgba(255,226,150,.08)';for(let i=0;i<4;i++){const x=w*(.15+i*.22);poly(g,[x,0,x+w*.06,0,x+w*.16,hz,x+w*.08,hz]);}
   const row=(base,hgt,col,step)=>{g.fillStyle=col;for(let x=-step;x<w+step;x+=step*(.7+R()*.6)){const th=hgt*(.7+R()*.6);poly(g,[x-step*.6,base,x,base-th,x+step*.6,base]);}g.fillRect(0,base,w,h-base);};
@@ -445,7 +452,7 @@ function drawEnemy(g,e,t){
   if(e.dieT!=null){g.globalAlpha=1-age/.6;g.translate(0,age*20);}
   else if(hit&&Math.floor((time-e.hitT)*20)%2)g.globalAlpha=.45;
   g.fillStyle='rgba(0,0,0,.3)';ell(g,0,0,e.d.boss?50:e.d.fly?14:26,e.d.boss?9:5);g.fill();
-  if(e.type==='serpent')drawSerpent(g,t,e);else if(e.type==='golem')drawGolem(g,t,e);else if(e.d.boss)drawGuardian(g,t,e);else ({lizard:drawLizard,bat:drawBat,wolf:drawWolf,wisp:drawWisp,scorpion:drawScorpion,viper:drawViper,soldier:drawSoldier,spider:drawSpider})[e.type](g,t+e.ph);
+  if(e.d.art)drawMonster(g,t+e.ph,e);else if(e.type==='serpent')drawSerpent(g,t,e);else if(e.type==='golem')drawGolem(g,t,e);else if(e.d.boss)drawGuardian(g,t,e);else ({lizard:drawLizard,bat:drawBat,wolf:drawWolf,wisp:drawWisp,scorpion:drawScorpion,viper:drawViper,soldier:drawSoldier,spider:drawSpider})[e.type](g,t+e.ph);
   if(e.dieT==null&&time-e.hitT<.1){g.globalCompositeOperation='lighter';g.fillStyle='rgba(255,250,235,.4)';ell(g,0,e.d.boss?-80:-22,e.d.boss?62:24,e.d.boss?72:20);g.fill();g.globalCompositeOperation='source-over';}
   g.restore();
 }
@@ -561,6 +568,7 @@ function renderBattle(){
     }
     if(f.kind==='burst'&&k<.6){for(let i=0;i<12;i++){const ang=i/12*TAU+f.x,r=8+k*48;g.fillStyle=`rgba(255,230,180,${1-k/.6})`;circ(g,f.x+Math.cos(ang)*r,f.y+Math.sin(ang)*r*.6,2.6*(1-k/.6)+.6);}}
     if(f.kind==='wave'&&k<.9){g.strokeStyle=`rgba(140,210,240,${.85*(1-k/.9)})`;g.lineWidth=3;for(let i=0;i<5;i++){const xx=60+k*SW*.8-i*18,yy=180+i*14;g.beginPath();g.arc(xx,yy,22,-1.2,1.2);g.stroke();}}
+    if(f.kind==='frost'&&k<1){for(let i=0;i<26;i++){const xx=((i*53+k*260)%(SW*.8))+20,yy=120+(i*29)%130+k*30;g.fillStyle=`rgba(225,245,255,${.85*(1-k)})`;circ(g,xx,yy,1.6+(i%3));}g.strokeStyle=`rgba(190,230,255,${.7*(1-k)})`;g.lineWidth=2;for(let i=0;i<8;i++){const xx=40+i*45-k*60;g.beginPath();g.moveTo(xx,150);g.lineTo(xx-30,190);g.stroke();}}
     if(f.kind==='sand'&&k<.9){g.strokeStyle=`rgba(230,200,140,${.8*(1-k/.9)})`;g.lineWidth=2;g.beginPath();for(let i=0;i<14;i++){const yy=150+i*8,xx=(SW*.6)-k*SW*.7-(i%3)*20;g.moveTo(xx,yy);g.lineTo(xx-40,yy+4);}g.stroke();
       for(let i=0;i<20;i++){g.fillStyle=`rgba(220,190,130,${.7*(1-k)})`;circ(g,(i*37+k*-300)%300+60,170+(i*13)%80,1.5);}}
   }

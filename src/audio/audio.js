@@ -84,6 +84,7 @@ const SFX=(()=>{
     mystic:()=>arp([523,659,784,988],.22,{dur:1,v:.05,a:.08}),
     step:o=>{
       const k=o.kind,p=o.pan||0;
+      if(k==='snow'){noise({type:'lowpass',f:1400,q:.7,dur:.08,v:.06,pan:p});noise({type:'highpass',f:3500,dur:.04,v:.02,pan:p,d:.02});return;}
       if(k==='stone'){noise({type:'bandpass',f:2800,q:2,dur:.03,v:.045,pan:p});tone({f:210,f2:120,dur:.03,v:.025,pan:p});}
       else if(k==='wood'){tone({f:150,f2:90,dur:.06,v:.06,pan:p});noise({type:'lowpass',f:600,dur:.04,v:.04,pan:p});}
       else if(k==='dirt'){noise({type:'bandpass',f:900,q:.8,dur:.06,v:.05,pan:p});noise({type:'bandpass',f:3000,q:1,dur:.04,v:.015,pan:p,d:.02});}
@@ -239,6 +240,7 @@ const SFX=(()=>{
     else if(scene.forest)want='forest';
     else if(scene.wadi)want='wadi';
     else if(scene.fort)want='fort';
+    else if(scene.area)want=scene.music;
     else{want=nightAmount()>.6&&!scene.interior?'night':'village';if(scene.interior)lvl=.55;}
     if(want!==mus.name){
       if(mus.g){const og=mus.g;og.gain.setTargetAtTime(.0001,ac.currentTime,.35);setTimeout(()=>{try{og.disconnect();}catch(_){}} ,2500);}

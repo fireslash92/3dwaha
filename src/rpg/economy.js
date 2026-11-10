@@ -64,6 +64,7 @@ function renderShop(reset){
       return row(id,it.key&&P.inv[id]?'<span class="tag-eq">تملكها</span>':`<button type="button" class="btn" data-buy="${id}"${ok?'':' disabled'}>${baisa(it.price)}</button>`);}).join('')}</div>`;
   }else if(shopTab==='race'){html+=raceBoard();
   }else if(shopTab==='haggle'){html+=haggleBoard();
+  }else if(shopTab==='inn'){html+=innBoard();
   }else if(shopTab==='sell'){
     const ids=Object.keys(P.inv).filter(id=>ITEMS[id]&&P.inv[id]>0&&!ITEMS[id].key&&sellValue(id)>0&&P.inv[id]>equippedCount(id)&&(!SHOP[shopId].sellFilter||SHOP[shopId].sellFilter(id)));
     html+=ids.length?`<div class="list">${ids.map(id=>row(id,`<button type="button" class="btn ghost" data-sell="${id}">بيع بـ${baisa(shopSell(id))}</button>`)).join('')}</div>`
@@ -83,6 +84,7 @@ shopEl.addEventListener('click',e=>{
   if(b.id==='shopClose'){closeShop();return;}
   if(d.race){startRace(d.race);return;}
   if(d.offer){haggleOffer(+d.offer);return;}
+  if(d.rest){restInn();return;}
   if(d.stab){SFX.play('tab');shopTab=d.stab;shopMsg='';renderShop(true);return;}
   if(d.buy){const it=ITEMS[d.buy];if(P.money<it.price){SFX.play('error');return;}P.money-=it.price;P.inv[d.buy]=(P.inv[d.buy]||0)+1;if(shopId==='peddler')achUnlock('peddler');if(SHOP[shopId].stock&&['sweets','scent','fishmonger'].includes(shopId))achUnlock('souq');SFX.play('coin');shopMsg=`اشتريت ${it.name}.${it.slot?' تجده في القائمة ← العتاد.':''}`;renderShop();saveGame();return;}
   if(d.sell){const v=shopSell(d.sell);P.inv[d.sell]--;P.money+=v;SFX.play('coin');shopMsg=`بعت ${ITEMS[d.sell].name} بـ${baisa(v)}.`;renderShop();saveGame();return;}

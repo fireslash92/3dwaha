@@ -57,6 +57,7 @@ function findTarget(){
   if(best)return best;
   for(const p of PICKUPS)if(p.scene===scene.id&&pickupActive(p)&&Math.hypot(hero.x-p.x,hero.y-p.y)<36)return {kind:'pickup',p,x:p.x,y:p.y-10};
   {const ft=fishTarget();if(ft)return ft;}
+  if(scene.area)return areaTarget();
   if(scene.fort)return fortTarget();
   if(scene.forest){if(Math.hypot(hero.x-STONE.x,hero.y-STONE.y)<52)return {kind:'npc',npc:STONE,x:STONE.x,y:STONE.y-6};return null;}
   if(scene.wadi){
@@ -73,7 +74,7 @@ function findTarget(){
 function update(dt){
   time+=dt;
   if(state==='race'||RACE){raceTick(dt);return;}
-  lifeTick(dt);weatherTick(dt);puddleFeel(dt);fishTick(dt);achTick(dt);marketTick(dt);
+  lifeTick(dt);weatherTick(dt);puddleFeel(dt);fishTick(dt);achTick(dt);marketTick(dt);chapter5Tick();
   for(const n of NPCS)if(n.route&&n.route.length&&n.scene!==scene.id)walkRoute(n,dt);
   if(talkCooldown>0)talkCooldown-=dt;
   if(state==='play'||state==='dialog'||state==='fish')P.clock=(P.clock??540)+dt*DAY_RATE;
@@ -86,8 +87,8 @@ function update(dt){
       const moved=Math.hypot(p.x-hero.x,p.y-hero.y);
       hero.x=p.x;hero.y=p.y;hero.moving=true;hero.phase+=dt*11;
       {const lt=trail[trail.length-1];if(!lt||Math.hypot(hero.x-lt.x,hero.y-lt.y)>=3){trail.push({x:hero.x,y:hero.y,dir:hero.dir});if(trail.length>40)trail.shift();}}
-      const si=Math.floor(hero.phase/Math.PI);if(si!==lastStep&&moved>.05){lastStep=si;SFX.step(scene.interior?'wood':scene.fort?'stone':scene.forest||scene.wadi?'dirt':MAP.onAnyPath(hero.x,hero.y)?'stone':'grass',si%2?.15:-.15);stepFeel(scene.fort?'stone':MAP.onAnyPath(hero.x,hero.y)?'stone':'grass',si%2?1:-1);}
-      if(scene.forest&&hero.y<FH-150&&Math.hypot(hero.x-FOREST.clearing.x,hero.y-FOREST.clearing.y)>FOREST.clearing.r+10||scene.wadi&&hero.x>150&&hero.x<1080&&hero.y<500||scene.fort&&hero.y>320&&hero.y<830){encounterMeter-=moved;if(encounterMeter<=0){resetMeter();startEncounter();}}
+      const si=Math.floor(hero.phase/Math.PI);if(si!==lastStep&&moved>.05){lastStep=si;SFX.step(scene.area?scene.step:scene.interior?'wood':scene.fort?'stone':scene.forest||scene.wadi?'dirt':MAP.onAnyPath(hero.x,hero.y)?'stone':'grass',si%2?.15:-.15);stepFeel(scene.area?scene.step:scene.fort?'stone':MAP.onAnyPath(hero.x,hero.y)?'stone':'grass',si%2?1:-1);}
+      if(scene.forest&&hero.y<FH-150&&Math.hypot(hero.x-FOREST.clearing.x,hero.y-FOREST.clearing.y)>FOREST.clearing.r+10||scene.wadi&&hero.x>150&&hero.x<1080&&hero.y<500||scene.fort&&hero.y>320&&hero.y<830||scene.area&&areaEncOk()){encounterMeter-=moved;if(encounterMeter<=0){resetMeter();startEncounter();}}
     }else{hero.moving=false;hero.phase=0;}
     target=findTarget();
     if(v&&scene.id==='village'){for(const h of MAP.houses)if(v.y<-.4&&Math.abs(hero.x-h.doorX)<15&&hero.y>h.base&&hero.y<h.base+11){enterHouse(h);break;}}
@@ -99,6 +100,7 @@ function update(dt){
     if(state==='play'&&scene.wadi&&hero.x<14){SFX.play('rustle');goTo('village',VW-44,446,'left','عين الوادي');}
     if(state==='play'&&scene.id==='village'&&P.flags.ch3&&v&&v.x>.4&&hero.x>VW-26&&Math.abs(hero.y-446)<30){resetMeter();SFX.play('rustle');enterWadi();goTo('wadi',34,300,'right','وادي الفلج');}
     if(state==='play'&&scene.id==='village'&&chapterDone&&v&&v.y<-.4&&hero.y<96&&Math.abs(hero.x-576)<34){resetMeter();SFX.play('rustle');goTo('forest',320,FH-40,'up','ممر الغابة');}
+    if(state==='play'&&scene.area)areaTick(v);
     if(state==='play'&&scene.forest&&!forestHintShown&&!P.flags.boss){forestHintShown=true;notify('احذر: حيوانات الغابة تهاجم المارّة<small>إن خسرت معركة تعود إلى القرية سالمًا</small>',3.6);}
     if(state==='play'&&scene.id==='village'&&!chapterDone){
       const z=MAP.forestZone,inZ=hero.x>z.x&&hero.x<z.x+z.w&&hero.y>z.y&&hero.y<z.y+z.h;

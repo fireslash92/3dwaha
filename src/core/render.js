@@ -43,7 +43,7 @@ function render(){
   drawAirFeel(g);
   drawSunShafts(g);drawCanopy(g);
   drawNight(g,cx,cy);
-  drawWeatherScreen(g,false);
+  drawWeatherScreen(g,false);drawAreaWeather(g);
   for(const n of NPCS){if(n.scene!==scene.id||target&&target.npc===n&&state==='play')continue;const m=questMark(n);if(m)drawQuestMark(g,n,m,t);else if(n.shop&&met.has(n.id)&&Math.hypot(hero.x-n.x,hero.y-n.y)<150)drawShopMark(g,n,t);}
   if(questStarted&&hasSkill('seeker'))for(const n of NPCS){
     if(n.scene!==scene.id||n===SALEM||n.noMeet||met.has(n.id)||(target&&target.npc===n))continue;

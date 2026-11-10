@@ -26,13 +26,14 @@ function sceneLights(){
   }else if(scene.forest){push(FOREST.stone.x,FOREST.stone.y-30,P.flags.boss?70:150);}
   else if(scene.fort){FORT.braziers.forEach(b=>push(b.x,b.y-34,110));if(!P.flags.boss3)push(FORT.altar.x,FORT.altar.y-50,90);push(FORT.well.x,FORT.well.y,40,.4);}
   else if(scene.wadi){push(WADI.spring.x,WADI.spring.y-10,P.flags.gates?120:60,.8);WADI.gates.forEach(g=>push(g.x,150,30,.4));}
+  else if(scene.area)for(const l of scene.lights)push(l[0],l[1],l[2],l[3]);
   for(const pk of PICKUPS)if(pk.scene===scene.id&&pickupActive(pk))push(pk.x,pk.y-10,40,.9);
   push(hero.x,hero.y-20,70,.75);
   return L;
 }
 function drawNight(g,cx,cy){
   if(scene.interior)return;
-  const n=nightAmount()*(scene.forest?1.05:1),du=duskAmount();
+  const n=scene.dark?.94:nightAmount()*(scene.forest?1.05:1),du=scene.dark?0:duskAmount();
   if(n<.02&&du<.02)return;
   const z=view.zoom,q=OPT.quality==='saver'?.35:.5,w=Math.ceil(view.w*q),h=Math.ceil(view.h*q);
   if(!nightCv)nightCv=document.createElement('canvas');

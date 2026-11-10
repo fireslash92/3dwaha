@@ -40,6 +40,7 @@ function act(){
   else if(target.kind==='pot'){smashPot(target.p);talkCooldown=.4;}
   else if(target.kind==='innergate'){tryInnerGate();talkCooldown=.6;}
   else if(target.kind==='fish')startFishing(target.w);
+  else if(target.kind==='area')areaAct(target);
   else if(target.kind==='pickup'){takePickup(target.p);talkCooldown=.2;}
   else if(target.kind==='spring'){const full=curHP()>=stat('hp')&&curMP()>=stat('mp')&&(!P.flags.aisha||allyHP()>=allyStat('hp')&&allyMP()>=allyStat('mp'));P.hp=null;P.mp=null;P.ally={hp:null,mp:null};SFX.play('water');showToast('note',scene.fort?'شربتم من بئر الحصن<small>عادت إليكم الصحة والطاقة</small>':dryVillage()?'بقي في الحوض قليل من الماء…<small>شربتم فعادت إليكم الصحة والطاقة</small>':full?'ماء النافورة بارد وعذب':'شربت من ماء النافورة<small>عادت إليك صحتك وطاقتك كاملتين</small>',2.6);saveGame();talkCooldown=.5;}
 }
@@ -49,6 +50,7 @@ function remainingLine(left){
   return `بقي ${who} بعد. بعضهم داخل البيوت، فلا تتردد في طرق الأبواب.`;
 }
 function linesFor(n){
+  if(n.linesFn){const l=n.linesFn();if(l)return l;}
   if(n===SIGN)return SIGN_LINES;
   if(n===ALTAR)return P.flags.boss3?['المنصة فارغة الآن. أخذتم الشظية الثالثة.']:['على المنصة تتوهج الشظية الثالثة.','تمتد أيديكما إليها… فتهتز الأرض وتتحرك الجدران!'];
   if(n===SPRING){
@@ -65,6 +67,7 @@ function linesFor(n){
   if(n.id==='aisha'&&chapterDone&&!P.flags.aisha)return AISHA_JOIN;
   if(n===SALEM){
     if(!questStarted)return SALEM_INTRO;
+    if(P.flags.ending&&!P.flags.ch5)return SALEM_CH5;
     if(P.flags.ending)return ['انظرا إلى السماء! نجمة الوادي عادت تلمع فوقنا.','عين الوادي بيتكما دائمًا. أهلًا بكما متى شئتما.'];
     if(P.flags.boss3)return ['الشظايا الثلاث! خذاها إلى حجر النور في قلب الغابة، فهناك سقطت النجمة.'];
     if(P.flags.ch4)return ['الحصن خلف الوادي. انزلا الدرج في جنوب الوادي، وابحثا عن مفتاح بوابته الداخلية.'];
@@ -124,6 +127,7 @@ function closeDialog(){
   }
   if(questAct&&questAct.n===n&&said===questAct.lines){const qa=questAct;questAct=null;applyQuest(qa);}
   else if(n.shop&&said===n.repeat)openShop(n.shop);
+  if(n.onSaid)n.onSaid(said);
   saveGame();
 }
 function giveGift(n){
@@ -154,7 +158,7 @@ function openChapter3(){
   SFX.play('fanfare');state='chapter';resetInput();c.hidden=false;c.classList.remove('leaving');gameEl.classList.add('talking');
 }
 function openChapter(){chapterCard=1;SFX.play('fanfare');state='chapter';resetInput();chapterEl.hidden=false;chapterEl.classList.remove('leaving');gameEl.classList.add('talking');}
-function closeChapter(){if(state!=='chapter')return;if(chapterCard===1){syncAisha();notify('فُتح طريق الغابة شمال القرية<small>وعائشة تنتظرك عند مدخله</small>',4);notify('أعطاك سالم ١٥٠ بيسة للطريق<small>سعيد يبيع المؤن، وراشد يصوغ من غنائم الغابة، وبعض أهل القرية يحتاجون مساعدتك</small>',4.4);}else if(chapterCard===4)notify('شكرًا لأنك لعبت أسرار عين الوادي<small>تستطيع إكمال المهام الجانبية وموسوعة المخلوقات</small>',4);else if(chapterCard===2)notify('تحدّث إلى سالم عند النافورة<small>ماء الفلج بدأ يجف!</small>',3.6);else notify('عاد الماء إلى عين الوادي<small>الفصل الرابع قادم: الحصن القديم</small>',3.6);chapterEl.classList.add('leaving');gameEl.classList.remove('talking');setTimeout(()=>{chapterEl.hidden=true;},500);state='play';talkCooldown=.4;}
+function closeChapter(){if(state!=='chapter')return;if(chapterCard===5){const f=cardAfter;cardAfter=null;chapterEl.classList.add('leaving');gameEl.classList.remove('talking');setTimeout(()=>{chapterEl.hidden=true;},500);state='play';talkCooldown=.4;if(f)f();saveGame();return;}if(chapterCard===1){syncAisha();notify('فُتح طريق الغابة شمال القرية<small>وعائشة تنتظرك عند مدخله</small>',4);notify('أعطاك سالم ١٥٠ بيسة للطريق<small>سعيد يبيع المؤن، وراشد يصوغ من غنائم الغابة، وبعض أهل القرية يحتاجون مساعدتك</small>',4.4);}else if(chapterCard===4)notify('شكرًا لأنك لعبت أسرار عين الوادي<small>تستطيع إكمال المهام الجانبية وموسوعة المخلوقات</small>',4);else if(chapterCard===2)notify('تحدّث إلى سالم عند النافورة<small>ماء الفلج بدأ يجف!</small>',3.6);else notify('عاد الماء إلى عين الوادي<small>الفصل الرابع قادم: الحصن القديم</small>',3.6);chapterEl.classList.add('leaving');gameEl.classList.remove('talking');setTimeout(()=>{chapterEl.hidden=true;},500);state='play';talkCooldown=.4;}
 
 function goTo(id,x,y,dir,label){
   if(state!=='play')return;

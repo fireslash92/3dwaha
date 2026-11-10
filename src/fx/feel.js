@@ -64,12 +64,12 @@ function drawTransition(){
 const PUFFS=[],PRINTS=[],RIPPLES=[];
 let lastRipple=0;
 function stepFeel(kind,side){
-  const sc=scene.id,col=sc==='wadi'?'216,191,142':sc==='fort'?'201,168,118':sc==='forest'?'143,122,84':kind==='stone'?'203,189,159':null;
+  const sc=scene.id,col=kind==='snow'?'240,246,250':sc==='wadi'?'216,191,142':sc==='fort'?'201,168,118':sc==='forest'?'143,122,84':kind==='stone'?'203,189,159':null;
   if(col&&OPT.quality!=='saver'&&hero.moving){
     for(let i=0;i<2;i++)PUFFS.push({x:hero.x+(Math.random()-.5)*8,y:hero.y-1,vx:(Math.random()-.5)*14,vy:-6-Math.random()*8,r:2+Math.random()*2,t0:time,life:.55,col});
     if(PUFFS.length>60)PUFFS.splice(0,PUFFS.length-60);
   }
-  if(sc==='wadi'||sc==='forest'&&FOREST.nearest(hero.x,hero.y).d<40){
+  if(sc==='wadi'||kind==='snow'||sc==='forest'&&FOREST.nearest(hero.x,hero.y).d<40){
     const a={up:-Math.PI/2,down:Math.PI/2,left:Math.PI,right:0}[hero.dir]||0,off=side>0?3:-3;
     PRINTS.push({x:hero.x+Math.cos(a+Math.PI/2)*off,y:hero.y-1+Math.sin(a+Math.PI/2)*off,a,t0:time,sc});
     if(PRINTS.length>70)PRINTS.shift();

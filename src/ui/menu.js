@@ -65,7 +65,7 @@ function openMenu(tab){
 function closeMenu(){if(state!=='menu')return;SFX.play('menuClose');menuEl.hidden=true;state='play';talkCooldown=.25;gameEl.classList.remove('talking');saveGame();}
 function renderHead(){
   const l=levelOf(P.xp),hpM=stat('hp'),mpM=stat('mp'),hp=curHP(),mp=curMP();
-  $('heroLvl').textContent=`المستوى ${AR(l)}`;$('heroMoney').innerHTML=COIN+baisa(P.money);$('heroTitle').textContent=TITLES[l-1]||TITLES[TITLES.length-1];
+  $('heroLvl').textContent=`المستوى ${AR(l)}`;$('heroMoney').innerHTML=COIN+baisa(P.money);$('heroTitle').textContent=l<=TITLES.length?TITLES[l-1]:TITLES_EXTRA[Math.min(TITLES_EXTRA.length-1,Math.floor((l-11)/12))];
   let xpTxt,xpPct;
   if(l<LEVELS.length){const a=LEVELS[l-1],b=LEVELS[l];xpTxt=`${AR(P.xp-a)} / ${AR(b-a)}`;xpPct=(P.xp-a)/(b-a)*100;}else{xpTxt='الأعلى';xpPct=100;}
   $('heroBars').innerHTML=`<div class="bar hp"><span>الصحة<em>${AR(hp)} / ${AR(hpM)}</em></span><i><b style="width:${hp/hpM*100}%"></b></i></div>`+
@@ -192,6 +192,7 @@ menuEl.addEventListener('click',e=>{
   if(d.tab){SFX.play('tab');menuTab=d.tab;eqSel=null;confirmNew=false;bagMsg='';saveMsg='';renderMenu(true);menuTabs.querySelector(`[data-tab="${d.tab}"]`)?.focus({preventScroll:true});return;}
   if(d.act!=='new')confirmNew=false;
   if(d.slot){SFX.play('tap');eqSel=eqSel===d.slot?null:d.slot;renderMenu();if(eqSel&&matchMedia('(max-width:700px),(orientation:portrait)').matches)$('pick')?.scrollIntoView({block:'start',behavior:'smooth'});return;}
+  if(d.equip&&!canWear(d.equip)){SFX.play('error');return;}
   if(d.equip){SFX.play(P.eq[eqSel]===d.equip?'tap':'equip');P.eq[eqSel]=d.equip;P.hp=Math.min(curHP(),stat('hp'));P.mp=Math.min(curMP(),stat('mp'));renderMenu();saveGame();return;}
   if(d.unequip){SFX.play('unequip');P.eq[d.unequip]=null;P.hp=Math.min(curHP(),stat('hp'));P.mp=Math.min(curMP(),stat('mp'));renderMenu();saveGame();return;}
   if(d.use){

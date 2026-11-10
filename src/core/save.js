@@ -25,6 +25,7 @@ function applySave(d){
   NPCS.forEach(n=>{n.slotKey=null;n.route=null;});lifeReady=false;
   P=f;
   if(d.P){P.xp=+d.P.xp||0;P.hp=d.P.hp??null;P.mp=d.P.mp??null;P.inv=Object.assign({},d.P.inv||f.inv);P.eq=Object.assign(f.eq,d.P.eq||{});P.gifts=Object.assign({},d.P.gifts||{});P.gauge=+d.P.gauge||0;P.flags=Object.assign({},d.P.flags||{});P.ally=Object.assign({hp:null,mp:null},d.P.ally||{});P.money=typeof d.P.money==='number'?d.P.money:(d.chapter?200:50);P.kills=Object.assign({},d.P.kills||{});P.q=JSON.parse(JSON.stringify(d.P.q||{}));P.clock=typeof d.P.clock==='number'?d.P.clock:540;P.lore=JSON.parse(JSON.stringify(d.P.lore||{}));}
+  if(d.P)for(const k in d.P)if(!(k in f)&&d.P[k]!=null)P[k]=JSON.parse(JSON.stringify(d.P[k])); // later systems: achievements, fishing log, races, haggling, travel
   for(const sl in P.eq)if(P.eq[sl]&&!ITEMS[P.eq[sl]])P.eq[sl]=null;
   met.clear();(d.met||[]).forEach(id=>{if(VILLAGERS.some(n=>n.id===id))met.add(id);});
   NPCS.forEach(n=>{n.talked=(d.talked&&+d.talked[n.id])||(met.has(n.id)?1:0);});

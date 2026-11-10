@@ -12,5 +12,5 @@ Object.keys(INTERIORS).forEach(id=>{
 let scene=SCENES.village;
 function ensureScene(sc){
   if(!sc.ground||sc.groundS!==view.S){sc.ground=sc.buildGround(view.S);sc.groundS=view.S;}
-  if(!sc.statics)sc.statics=sc.interior?interiorStatics(sc.cfg):sc.forest?forestStatics():sc.wadi?wadiStatics():sc.fort?fortStatics():villageStatics();
+  if(!sc.statics)sc.statics=sc.area?areaStatics(sc):sc.interior?interiorStatics(sc.cfg):sc.forest?forestStatics():sc.wadi?wadiStatics():sc.fort?fortStatics():villageStatics();
 }

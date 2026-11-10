@@ -12,7 +12,8 @@ function miniBackground(sc,bx,d){
   const cv=document.createElement('canvas');cv.width=bx.w*d;cv.height=bx.h*d;const g=cv.getContext('2d');g.scale(d,d);
   g.fillStyle=sc.forest?'#1d2c17':'#2c3f22';g.fillRect(0,0,bx.w,bx.h);
   g.save();g.translate(bx.ox,bx.oy);g.scale(bx.k,bx.k);g.lineCap='round';g.lineJoin='round';
-  if(sc.fort){
+  if(sc.area){drawAreaMini(g,sc);}
+  else if(sc.fort){
     g.fillStyle='#c9a876';g.fillRect(0,0,F2W,F2H);g.fillStyle='#8a6a3e';g.fillRect(0,0,40,F2H);g.fillRect(920,0,40,F2H);g.fillRect(0,0,F2W,72);FORT.walls.forEach(w=>g.fillRect(w.x0,w.y-36,w.x1-w.x0,36));FORT.towers.forEach(t=>{ell(g,t.x,t.y-20,46,46);g.fill();});g.fillStyle='#5a7a8a';ell(g,FORT.well.x,FORT.well.y,30,20);g.fill();
   }else if(sc.wadi){
     g.fillStyle='#d6b986';g.fillRect(0,0,WW,WH);g.fillStyle='#8a5a3e';g.fillRect(0,0,WW,140);g.fillRect(0,452,WW,WH-452);g.fillStyle='#9a8d7a';g.fillRect(0,136,1150,26);g.fillStyle='#4f9fb8';ell(g,WADI.spring.x,WADI.spring.y,52,32);g.fill();

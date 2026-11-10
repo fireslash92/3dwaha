@@ -235,6 +235,7 @@ const SFX=(()=>{
   function musicTick(){
     let want=null,lvl=1;
     if(state==='race'||RACE){want='race';}
+    else if(state==='dive'||DIVE){want='wadi';}
     else if(state==='battle'||(state==='fade'&&B)){want=B&&B.ended?null:B&&B.boss?'boss':'battle';}
     else if(state==='title'||state==='chapter')want='village';
     else if(scene.forest)want='forest';

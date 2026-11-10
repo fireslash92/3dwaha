@@ -32,6 +32,7 @@ function act(){
   if(state==='dialog'){advance();return;}
   if(state==='fish'){fishPress();return;}
   if(state==='race'){racePress();return;}
+  if(state==='dive'){divePress();return;}
   if(state!=='play'||talkCooldown>0||!target)return;
   if(target.kind==='npc')openDialog(target.npc);
   else if(target.kind==='door')enterHouse(target.house);

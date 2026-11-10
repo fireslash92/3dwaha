@@ -31,9 +31,10 @@ function makeMonster(id,o){
 function drawMonster(g,t,e){
   const d=e.d,P2=d.pal,o=d.opt,s=o.scale||1;
   g.save();g.scale(s,s);
-  ({beast:artBeast,flyer:artFlyer,spirit:artSpirit,elemental:artElemental,blob:artBlob,crab:artCrab,warrior:artWarrior,yeti:artYeti})[d.art](g,t,P2,o,e);
+  MONSTER_ART[d.art](g,t,P2,o,e);
   g.restore();
 }
+const MONSTER_ART={};
 function artBeast(g,t,p,o){
   const br=Math.sin(t*2.4)*.8,run=Math.sin(t*5)*1.5;
   g.fillStyle=p.dark;[[-18,0],[-10,0],[14,0],[22,0]].forEach((q,i)=>g.fillRect(q[0]-2.4,-16+(i%2?run*.3:0),4.8,16));
@@ -161,3 +162,5 @@ async function genAbility(id,a,cmd){
   await say(a.target==='all'?`${a.name} يصيب الأعداء!`:`${a.name} — ${AR(tot)} ضررًا.`,850);
   for(const e of B.enemies)await killCheck(e);
 }
+
+Object.assign(MONSTER_ART,{beast:artBeast,flyer:artFlyer,spirit:artSpirit,elemental:artElemental,blob:artBlob,crab:artCrab,warrior:artWarrior,yeti:artYeti});

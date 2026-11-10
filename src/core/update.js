@@ -74,6 +74,7 @@ function findTarget(){
 function update(dt){
   time+=dt;
   if(state==='race'||RACE){raceTick(dt);return;}
+  if(state==='dive'||DIVE){diveTick(dt);return;}
   lifeTick(dt);weatherTick(dt);puddleFeel(dt);fishTick(dt);achTick(dt);marketTick(dt);chapter5Tick();
   for(const n of NPCS)if(n.route&&n.route.length&&n.scene!==scene.id)walkRoute(n,dt);
   if(talkCooldown>0)talkCooldown-=dt;

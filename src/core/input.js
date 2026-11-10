@@ -22,7 +22,7 @@ function stickMove(e){
 function releaseStick(){stick.active=false;stick.id=null;stick.dx=stick.dy=0;stickHome(false);}
 zone.addEventListener('pointerdown',e=>{
   e.preventDefault();
-  if((state!=='play'&&state!=='race')||stick.active)return;
+  if((state!=='play'&&state!=='race'&&state!=='dive')||stick.active)return;
   const zr=zone.getBoundingClientRect(),half=base.offsetWidth/2||62;
   stick.active=true;stick.id=e.pointerId;
   try{zone.setPointerCapture(e.pointerId);}catch(_){}
@@ -53,7 +53,7 @@ window.addEventListener('keydown',e=>{
   if(e.code==='Escape'||e.code==='KeyM'){e.preventDefault();if(state==='menu')closeMenu();else if(state==='play')openMenu();return;}
   if(state==='menu'||state==='battle'||state==='shop')return;
   const k=KEYMAP[e.code];
-  if(k){e.preventDefault();if(state==='play'||state==='race')keys[k]=true;return;}
+  if(k){e.preventDefault();if(state==='play'||state==='race'||state==='dive')keys[k]=true;return;}
   if(e.code==='KeyE'||e.code==='Space'||e.code==='Enter'||e.code==='NumpadEnter'){
     e.preventDefault();fishHold=true;if(e.repeat)return;
     if(state==='title')startGame();else if(state==='chapter')closeChapter();else act();

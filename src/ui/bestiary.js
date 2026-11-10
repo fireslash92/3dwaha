@@ -13,7 +13,8 @@ function beastPic(type){
   const fake={veil:0,enraged:false};
   ({lizard:drawLizard,bat:drawBat,wolf:drawWolf,wisp:drawWisp,scorpion:drawScorpion,viper:drawViper})[type]?.(g,1.3);
   ({soldier:drawSoldier,spider:drawSpider})[type]?.(g,1.3);if(type==='golem')drawGolem(g,1.3,{defBonus:0});
-  if(type==='guardian')drawGuardian(g,1.3,fake);if(type==='serpent')drawSerpent(g,1.3,fake);
+  if(d.art)drawMonster(g,1.3,{d,enraged:false,veil:0});
+  else if(type==='guardian')drawGuardian(g,1.3,fake);if(type==='serpent')drawSerpent(g,1.3,fake);
   return beastPics[type]=c.toDataURL();
 }
 function tabBeasts(){

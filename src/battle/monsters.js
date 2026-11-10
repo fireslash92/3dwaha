@@ -14,7 +14,7 @@ const ROLES={
 function makeMonster(id,o){
   const L=o.lv,R=ROLES[o.boss?'boss':o.role||'brute'];
   ENEMIES[id]=Object.assign({
-    name:o.name,lv:L,art:o.art,pal:o.pal,opt:o.opt||{},
+    name:o.name,lv:L,art:o.art,role:o.boss?'boss':o.role||'brute',pal:o.pal,opt:o.opt||{},
     hp:Math.round((16+6*L)*R.hp*(o.hpK||1)*(o.boss?1:1+L/60)),atk:Math.round((3+1.45*L)*R.atk),mag:Math.round((4+1.15*L)*R.mag),def:Math.round((1+1.15*L)*R.def),agi:Math.round((5+.45*L)*R.agi),
     xp:Math.round((.55*Math.pow(L,1.78)+8)*3*(o.boss?12:1)),gold:Math.round((4+1.6*L)*(o.boss?20:1)),
     evade:R.evade||0,fly:!!o.fly,boss:!!o.boss,weak:o.weak,resist:o.resist,ai:o.ai||'phys',move:o.move||['هجمة قوية',.25,1.35],drop:o.drop,status:o.ai==='poison'?'poison':o.ai==='sleep'?'sleep':undefined,
@@ -121,7 +121,7 @@ function artYeti(g,t,p,o,e){
    BEHAVIOUR: bosses built from a list of moves
    ========================================================= */
 async function genBossAction(e){
-  e.turn=(e.turn||0)+1;const d=e.d,ms=members().filter(alive);if(!ms.length)return;
+  e.turn=(e.turn||0)+1;const d=e.d,ms=members().filter(alive).concat(B.pet&&B.pet.hp>0?['pet']:[]);if(!ms.length)return;
   if(!e.enraged&&e.hp<e.max*.5){e.enraged=true;e.atkK=1.25;SFX.play('growl');shake(10,.7);await say(d.moves.rage||`${e.name} يغضب، وتشتد ضرباته!`,1300);}
   const pw=e.atkK||1;e.actT=time;
   const big=d.moves.big,every=d.moves.every||3;

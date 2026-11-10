@@ -79,7 +79,7 @@ function renderMenu(resetScroll){
   renderHead();
   menuTabs.innerHTML=TABS.map(t=>`<button type="button" role="tab" data-tab="${t.id}" aria-selected="${t.id===menuTab}"><svg viewBox="0 0 24 24" aria-hidden="true">${t.ic}</svg>${t.name}</button>`).join('');
   const top=menuBody.scrollTop;
-  menuBody.innerHTML={ach:tabAch,beasts:tabBeasts,status:tabStatus,gear:tabGear,bag:tabBag,skills:tabSkills,quests:tabQuests,settings:tabSettings}[menuTab]();
+  menuBody.innerHTML={pets:tabPets,ach:tabAch,beasts:tabBeasts,status:tabStatus,gear:tabGear,bag:tabBag,skills:tabSkills,quests:tabQuests,settings:tabSettings}[menuTab]();
   menuBody.scrollTop=resetScroll?0:top;
 }
 function tabStatus(){

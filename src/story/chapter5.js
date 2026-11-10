@@ -40,7 +40,7 @@ function innBoard(){
 }
 function restInn(){
   const I=SHOP[shopId].inn;if(P.money<I.price){SFX.play('error');return;}
-  P.money-=I.price;P.hp=null;P.mp=null;P.ally={hp:null,mp:null};P.lastTown=I.town;SFX.play('heal');shopMsg='نمتم ليلة هادئة، وعادت إليكم قوتكم.';renderShop();saveGame();
+  P.money-=I.price;P.hp=null;P.mp=null;P.ally={hp:null,mp:null};healPets();P.lastTown=I.town;SFX.play('heal');shopMsg='نمتم ليلة هادئة، وعادت إليكم قوتكم.';renderShop();saveGame();
 }
 
 /* =========================================================

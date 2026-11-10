@@ -84,7 +84,7 @@ function arenaBout(){const R=RANKS[ARENA_RUN.id];showToast('note',`${R.name}<sma
 function arenaAfter(result){
   state='play';talkCooldown=.5;fadeEl.classList.remove('on');
   const run=ARENA_RUN;if(!run)return;const R=RANKS[run.id];
-  if(result!=='win'){ARENA_RUN=null;P.hp=null;P.mp=null;P.ally={hp:null,mp:null};P.gauge=0;notify(`خسرتم في المباراة ${AR(run.i+1)}<small>عالج الأطباء جراحكم. ارفعوا مستواكم وعودوا</small>`,3.6);return;}
+  if(result!=='win'){ARENA_RUN=null;P.hp=null;P.mp=null;P.ally={hp:null,mp:null};P.gauge=0;healPets();notify(`خسرتم في المباراة ${AR(run.i+1)}<small>عالج الأطباء جراحكم. ارفعوا مستواكم وعودوا</small>`,3.6);return;}
   run.i++;
   if(run.i<R.bouts.length){SFX.play('crowd');arenaBout();return;}
   ARENA_RUN=null;P.arena=P.arena||{};const first=!P.arena[run.id];P.arena[run.id]=1;P.money+=R.prize;

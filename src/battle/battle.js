@@ -53,13 +53,13 @@ const ALLY_SPELLS=[
 ];
 const NAMES={hero:'ناصر',aisha:'عائشة'};
 const members=()=>P.flags.aisha?['hero','aisha']:['hero'];
-const mHP=id=>id==='hero'?curHP():allyHP();
-const mMP=id=>id==='hero'?curMP():allyMP();
-const mStat=(id,k)=>id==='hero'?stat(k):allyStat(k);
+const mHP=id=>id==='pet'?(B&&B.pet?Math.max(0,B.pet.hp):0):id==='hero'?curHP():allyHP();
+const mMP=id=>id==='pet'?0:id==='hero'?curMP():allyMP();
+const mStat=(id,k)=>id==='pet'?(B&&B.pet?B.pet.s[k]||0:1):id==='hero'?stat(k):allyStat(k);
 const alive=id=>mHP(id)>0;
-function setHP(id,v){v=clamp(Math.round(v),0,mStat(id,'hp'));if(id==='hero')P.hp=v;else P.ally.hp=v;}
+function setHP(id,v){v=clamp(Math.round(v),0,mStat(id,'hp'));if(id==='pet'){if(B&&B.pet)B.pet.hp=v;}else if(id==='hero')P.hp=v;else P.ally.hp=v;}
 function setMP(id,v){v=clamp(Math.round(v),0,mStat(id,'mp'));if(id==='hero')P.mp=v;else P.ally.mp=v;}
-const mPos=id=>id==='hero'?{x:B.hx,y:B.hy}:{x:B.ax,y:B.ay};
+const mPos=id=>id==='pet'?{x:B.px,y:B.py}:id==='hero'?{x:B.hx,y:B.hy}:{x:B.ax,y:B.ay};
 const mDef=id=>mStat(id,'def')*(id==='hero'&&B.palm>0?1.5:1)*(B.weave>0?1.35:1);
 const eTop=e=>e.d.boss?e.y-140:e.y-50,eMid=e=>e.d.boss?e.y-72:e.y-24;
 function anim(id,kind){B.m[id].act=kind;B.m[id].actT=time;}
@@ -69,6 +69,7 @@ function layoutEnemies(){
   const {SW}=stageDims(),bx=SW*.3,boss=B.enemies.find(e=>e.d.boss);
   if(boss){boss.x=SW*.22;boss.y=244;const ms=[[SW*.44,192],[SW*.47,254],[SW*.38,222]];B.enemies.filter(e=>!e.d.boss).forEach((e,i)=>{const q=ms[i%3];e.x=q[0];e.y=q[1];});}
   else{const live=B.enemies,slots=live.length===1?[[bx,214]]:live.length===2?[[bx-34,196],[bx+30,234]]:[[bx-48,186],[bx+28,206],[bx-22,244]];live.forEach((e,i)=>{e.x=slots[i][0];e.y=slots[i][1];});}
+  B.px=SW-164;B.py=214;
   const duo=!!P.flags.aisha;B.hx=duo?SW-66:SW-88;B.hy=duo?204:222;B.ax=SW-114;B.ay=250;
 }
 function startEncounter(opts){
@@ -82,6 +83,7 @@ function startEncounter(opts){
   startTransition(!!opts.boss,()=>{
     B={enemies,bossType:opts.boss?types[0]:null,st:{hero:{poison:0,sleep:0},aisha:{poison:0,sleep:0}},money:0,pop:[],fx:[],m:{hero:{act:null,actT:-9,hitT:-9,guard:false},aisha:{act:null,actT:-9,hitT:-9,guard:false}},palm:0,weave:0,
        busy:true,mode:'main',actor:'hero',cmds:{},pending:null,ended:false,xp:0,drops:[],bg:null,result:null,boss:!!opts.boss,arena:opts.arena||null,round:0};
+    B.pet=setupPet();B.m.pet={act:null,actT:-9,hitT:-9,guard:false};B.st.pet={poison:0,sleep:0};
     layoutEnemies();
     gameEl.classList.add('battling');battleEl.hidden=false;state='battle';
     renderParty();bCmds.innerHTML='';
@@ -111,6 +113,7 @@ function renderParty(){
     return `<div class="pm${on?' on':''}${hp<=0?' ko':''}"><div class="nm">${NAMES[id]} <small>${hp<=0?'ساقط':B&&B.st[id].sleep>0?'نائم':B&&B.st[id].poison>0?'مسموم':'المستوى '+lvl}</small></div>${bar('hp','الصحة',hp,mStat(id,'hp'))}${bar('mp','الطاقة',mMP(id),mStat(id,'mp'))}</div>`;}).join('')+
     `<div class="bar lb"><span>العزيمة<em>${AR(Math.floor(gauge))}٪</em></span><i><b style="width:${gauge}%"></b></i></div>`+
     `<div class="buffs">${B&&B.palm>0?`<span>صمود النخلة: ${AR(B.palm)} جولات</span>`:''}${B&&B.weave>0?`<span>خيوط السدو: ${AR(B.weave)} جولات</span>`:''}</div>`;
+  if(B&&B.pet){const pt=B.pet;bParty.insertAdjacentHTML('beforeend',`<div class="pm pet${pt.hp<=0?' ko':''}"><div class="nm">${NAMES.pet} <small>${pt.hp<=0?'ساقط':'مرافق'}</small></div><div class="bar hp"><span>الصحة<em>${AR(Math.max(0,pt.hp))} / ${AR(pt.s.hp)}</em></span><i><b style="width:${Math.max(0,pt.hp)/pt.s.hp*100}%"></b></i></div></div>`);}
 }
 function showCmds(mode){
   if(!B)return;B.mode=mode;
@@ -131,7 +134,7 @@ function showCmds(mode){
     }
   }else if(mode==='skills'||mode==='magic'){
     const list=ABILITIES.filter(a=>a.type===(mode==='skills'?'skill':'magic')&&abilityOpen(a));
-    html=list.map(a=>`<button type="button" data-ab="${a.id}"${mp<a.mp?' disabled':''}>${a.name}<small>${AR(a.mp)} طاقة</small></button>`).join('')+`<button type="button" class="back wide" data-c="back">رجوع</button>`;
+    html=list.map(a=>`<button type="button" data-ab="${a.id}"${mp<a.mp?' disabled':''}>${a.name}<small>${AR(a.mp)} طاقة</small></button>`).join('')+(mode==='skills'&&P.flags.tamer&&!B.boss&&!B.arena?`<button type="button" data-c="tame">ترويض<small>${P.inv.tamebait?'معك '+AR(P.inv.tamebait)+' علف':'بلا علف'}</small></button>`:'')+`<button type="button" class="back wide" data-c="back">رجوع</button>`;
   }else if(mode==='spells'){
     const fallen=members().some(id=>!alive(id));
     html=ALLY_SPELLS.filter(s=>levelOf(P.xp)>=s.lv).map(s=>`<button type="button" data-sp="${s.id}"${mp<s.mp||s.target==='fallen'&&!fallen?' disabled':''}>${s.name}<small>${AR(s.mp)} طاقة</small></button>`).join('')+`<button type="button" class="back wide" data-c="back">رجوع</button>`;
@@ -169,6 +172,7 @@ bCmds.addEventListener('click',e=>{
   if(d.c==='continue'){endBattle();return;}
   if(d.c==='attack'){B.pending={kind:'attack'};chooseTarget();return;}
   if(d.c==='skills'||d.c==='magic'||d.c==='items'||d.c==='spells'){showCmds(d.c);return;}
+  if(d.c==='tame'){B.pending={kind:'tame'};chooseTarget();return;}
   if(d.c==='defend'){commit({kind:'defend'});return;}
   if(d.c==='flee'){commit({kind:'flee'});return;}
   if(d.c==='special'){commit({kind:'special'});return;}
@@ -193,11 +197,13 @@ async function runRound(){
   members().forEach(id=>{B.m[id].guard=!!cm[id]&&cm[id].kind==='defend';});
   const order=[];
   members().forEach(id=>{if(alive(id)&&(cm[id]||B.st[id].sleep>0))order.push({id,agi:mStat(id,'agi')+Math.random()*4+(cm[id]&&['flee','defend'].includes(cm[id].kind)?99:0)});});
+  if(B.pet&&B.pet.hp>0)order.push({pet:1,agi:B.pet.s.agi+Math.random()*4});
   aliveEnemies().forEach(e=>order.push({e,agi:e.d.agi+Math.random()*4}));
   order.sort((a,b)=>b.agi-a.agi);
   for(const o of order){
     if(B.ended)break;
     if(o.id){if(alive(o.id)){if(B.st[o.id].sleep>0){B.st[o.id].sleep--;await say(`${NAMES[o.id]} ${o.id==='hero'?'نائم':'نائمة'}…`,700);}else if(cm[o.id])await memberAction(o.id,cm[o.id]);}}
+    else if(o.pet){if(B.pet&&B.pet.hp>0)await petAction();}
     else if(o.e.alive)await enemyAction(o.e);
     renderParty();
     if(await checkEnd())return;
@@ -259,6 +265,7 @@ async function memberAction(id,cmd){
   return heroAction(cmd);
 }
 async function heroAction(cmd){
+  if(cmd.kind==='tame'){await tameAction(retarget(cmd.target));for(const e of B.enemies)await killCheck(e);return;}
   if(cmd.kind==='attack'){await strike('hero',retarget(cmd.target),1);return;}
   if(cmd.kind==='flee'){
     const avg=aliveEnemies().reduce((s,e)=>s+e.d.agi,0)/Math.max(1,aliveEnemies().length);
@@ -296,9 +303,9 @@ async function allyAction(cmd){
   if(s.id==='revive'){const t=cmd.ally;if(!t||alive(t)){await say('لا أحد يحتاج إلى نفَس الحياة الآن.',800);setMP('aisha',allyMP()+s.mp);return;}SFX.play('heal');setHP(t,mStat(t,'hp')*.4);healPop(t,mHP(t));await say(`نفَس الحياة يعيد ${NAMES[t]} إلى المعركة!`,1000);return;}
   if(s.id==='mend'){SFX.play('heal');for(const id of members().filter(alive)){const b=mHP(id);setHP(id,b+w*1.8+10);healPop(id,mHP(id)-b);}await say('نسمة الجماعة تعيد إلى الفريق صحته.',950);}
 }
-function pickTarget(){const ms=members().filter(alive);if(ms.length<2)return ms[0];return Math.random()<.55?'hero':'aisha';}
+function pickTarget(){if(B&&B.pet&&B.pet.hp>0&&Math.random()<.25)return 'pet';const ms=members().filter(alive);if(ms.length<2)return ms[0];return Math.random()<.55?'hero':'aisha';}
 function hurt(id,dmg){SFX.play('hurt');shake(dmg>=mStat(id,'hp')*.18?6:3,.24);buzz(dmg>=mStat(id,'hp')*.18?45:20);if(B.st[id].sleep>0){B.st[id].sleep=0;}setHP(id,mHP(id)-dmg);B.m[id].hitT=time;const p=mPos(id);popup(p.x,p.y-(id==='hero'?86:72),AR(dmg),'#ff8a7a');if(id==='hero')P.gauge=Math.min(100,(P.gauge||0)+dmg*.8);renderParty();}
-async function fallenCheck(id){if(!alive(id))await say(`${id==='hero'?'سقط ناصر!':'سقطت عائشة!'}`,900);}
+async function fallenCheck(id){if(!alive(id))await say(`${id==='pet'?'سقط '+NAMES.pet+'!':id==='hero'?'سقط ناصر!':'سقطت عائشة!'}`,900);}
 async function enemyAction(e){
   if(e.d.art&&e.d.boss)return genBossAction(e);
   if(e.type==='serpent')return serpentAction(e);
@@ -412,6 +419,7 @@ async function checkEnd(){
 }
 function endBattle(){
   if(!B)return;
+  petSaveBack();
   const result=B.result,boss=B.boss,bossType=B.bossType,arena=B.arena;
   B.busy=true;bCmds.querySelectorAll('button').forEach(b=>b.disabled=true);
   fadeEl.classList.add('on');
@@ -548,6 +556,7 @@ function renderBattle(){
   g.setTransform(d*sc*z,0,0,d*sc*z,d*(ox+so[0])+d*sc*fx0*(1-z),d*(oy+so[1])+d*sc*fy0*(1-z));
   const items=B.enemies.map(e=>({y:e.y,f:()=>drawEnemy(g,e,t)}));
   members().forEach(id=>{const p=mPos(id);items.push({y:p.y,f:()=>drawMember(g,id,t)});});
+  if(B.pet&&(B.pet.hp>0||time-B.m.pet.hitT<.6))items.push({y:B.py,f:()=>drawPetStage(g,t)});
   items.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
   B.fx=B.fx.filter(f=>time-f.t0<1.2);
   for(const f of B.fx){
@@ -582,3 +591,11 @@ function renderBattle(){
   if(fl){g.setTransform(1,0,0,1,0,0);g.fillStyle=`rgba(255,240,200,${.8*(1-(time-fl.t0)/.4)})`;g.fillRect(0,0,canvas.width,canvas.height);}
 }
 function circ2(g,x,y,r){g.beginPath();g.arc(x,y,r,0,TAU);g.stroke();}
+
+function drawPetStage(g,t){
+  const pt=B.pet,m=B.m.pet,act=time-pt.actT<.5,hit=time-m.hitT<.35;
+  g.save();g.translate(B.px-(act?Math.sin(Math.min(1,(time-pt.actT)/.5)*Math.PI)*22:0)+(hit?Math.sin((time-m.hitT)*60)*3:0),B.py);
+  if(pt.hp<=0)g.globalAlpha=.35;else if(hit&&Math.floor((time-m.hitT)*20)%2)g.globalAlpha=.5;
+  g.fillStyle='rgba(0,0,0,.3)';ell(g,0,0,pt.d.fly?14:24,5);g.fill();
+  g.scale(-.85,.85);drawMonster(g,t+pt.ph,{d:pt.d,enraged:false,veil:0});g.restore();
+}

@@ -22,6 +22,7 @@ function chooseDir(v,cur){
 }
 function collidersFor(who){
   const list=scene.colliders.filter(c=>!(c.tag==='barricade'&&chapterDone)&&!(c.tag==='eastgate'&&P.flags.ch3)&&!(c.tag==='rockfall'&&P.flags.ch4)&&!(c.tag==='innergate'&&P.flags.gateopen));
+  if(scene.id==='village')marketColliders(list);
   for(const n of NPCS)if(n!==who&&n.scene===scene.id)list.push({t:'c',x:n.x,y:n.y-1,r:NPC_R});
   if(who!==hero)list.push({t:'c',x:hero.x,y:hero.y,r:HERO_R});
   return list;
@@ -72,7 +73,7 @@ function findTarget(){
 function update(dt){
   time+=dt;
   if(state==='race'||RACE){raceTick(dt);return;}
-  lifeTick(dt);weatherTick(dt);puddleFeel(dt);fishTick(dt);achTick(dt);
+  lifeTick(dt);weatherTick(dt);puddleFeel(dt);fishTick(dt);achTick(dt);marketTick(dt);
   for(const n of NPCS)if(n.route&&n.route.length&&n.scene!==scene.id)walkRoute(n,dt);
   if(talkCooldown>0)talkCooldown-=dt;
   if(state==='play'||state==='dialog'||state==='fish')P.clock=(P.clock??540)+dt*DAY_RATE;

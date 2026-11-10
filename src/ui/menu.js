@@ -85,7 +85,7 @@ function renderMenu(resetScroll){
 function tabStatus(){
   const ks=['hp','mp','atk','def','agi','wis','luk'];
   const hh=hourNow(),hm=`${AR(Math.floor(hh))}:${AR(String(Math.floor((hh%1)*60)).padStart(2,'0'))}`,outdoor=scene.id==='village'||scene.interior;
-  return `<div class="set" style="padding:6px 0 12px"><div class="grow"><b>الوقت: ${phaseName()}، والطقس ${wxLabel()}</b><div class="muted">الساعة ${hm}. في الليل تظهر مخلوقات أخرى في الغابة</div></div>${outdoor?`<div class="actions"><button type="button" class="btn" data-act="wait" data-h="${isNight()?7:20}">${isNight()?'استرح حتى الصباح':'استرح حتى الليل'}</button></div>`:''}</div>
+  return `<div class="set" style="padding:6px 0 12px"><div class="grow"><b>الوقت: ${phaseName()}، والطقس ${wxLabel()}</b><div class="muted">الساعة ${hm}. في الليل تظهر مخلوقات أخرى في الغابة.${marketNote()}</div></div>${outdoor?`<div class="actions"><button type="button" class="btn" data-act="wait" data-h="${isNight()?7:20}">${isNight()?'استرح حتى الصباح':'استرح حتى الليل'}</button></div>`:''}</div>
   <h3>الخصائص</h3><div class="stats">${ks.map(k=>{const b=bonusStat(k);return `<div class="stat"><div class="n"><b>${STAT_NAMES[k]}</b><small>${STAT_NOTES[k]}</small></div><div class="v">${AR(stat(k))}${b?`<em>${num(b)}</em>`:''}</div></div>`;}).join('')}
   <div class="stat"><div class="n"><b>سرعة المشي</b><small>من الرشاقة والمهارات</small></div><div class="v">${AR(Math.round(heroSpeed()/SPEED*100))}٪</div></div></div>
   ${P.flags.aisha?`<h4>عائشة · رفيقة الرحلة</h4><div class="stats">${['hp','mp','atk','def','agi','wis'].map(k=>`<div class="stat"><div class="n"><b>${STAT_NAMES[k]}</b></div><div class="v">${AR(k==='hp'?allyHP():k==='mp'?allyMP():allyStat(k))}${k==='hp'||k==='mp'?`<em> / ${AR(allyStat(k))}</em>`:''}</div></div>`).join('')}</div>`:''}
@@ -111,7 +111,7 @@ function tabBag(){
   const ids=Object.keys(P.inv).filter(id=>P.inv[id]>0&&ITEMS[id]);
   const equipped=new Set(Object.values(P.eq));
   const row=(id,extra)=>{const it=ITEMS[id];return `<div class="row">${icon(it.icon,it.col)}<span class="grow"><span class="val">${it.name}${P.inv[id]>1?' ×'+AR(P.inv[id]):''} ${equipped.has(id)?'<span class="tag-eq">مجهّز</span>':''}</span><span class="lbl">${it.desc}</span></span>${extra||''}</div>`;};
-  const use=ids.filter(id=>ITEMS[id].use),key=ids.filter(id=>ITEMS[id].key),gear=ids.filter(id=>ITEMS[id].slot),mats=ids.filter(id=>ITEMS[id].mat);
+  const use=ids.filter(id=>ITEMS[id].use),key=ids.filter(id=>ITEMS[id].key||ITEMS[id].tool),gear=ids.filter(id=>ITEMS[id].slot),mats=ids.filter(id=>ITEMS[id].mat);
   const none='<p class="muted">لا شيء بعد.</p>';
   return `<h3>الحقيبة</h3><p class="coins" style="color:#7a4a26;margin:0 0 6px">${COIN}${baisa(P.money)}</p>${bagMsg?`<p class="quest" role="status" style="padding:8px 12px">${bagMsg}</p>`:''}
   <h4>المؤن</h4><div class="list">${use.length?use.map(id=>row(id,`<button type="button" class="btn" data-use="${id}">استخدام</button>`)).join(''):none}</div>

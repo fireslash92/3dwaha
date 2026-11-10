@@ -33,6 +33,7 @@
  "src/fx/atmosphere.js",
  "src/world/fishing.js",
  "src/world/camel-race.js",
+ "src/world/market.js",
  "src/ui/minimap.js",
  "src/core/save.js",
  "src/ui/menu.js",

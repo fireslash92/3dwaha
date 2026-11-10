@@ -31,6 +31,7 @@ function render(){
   for(const d of scene.statics){const b=d.b;if(b[2]<L||b[0]>Rr||b[3]<T||b[1]>Bt)continue;scratch.push(d);}
   for(const n of NPCS)if(n.scene===scene.id)scratch.push({y:n.y,x:n.x,draw:g2=>drawPerson(g2,n.x,n.y,n.dir,n.look,t,n.moving,n.phase)});
   lifeDrawables(d=>{const b=d.x,c=d.y;if(b<L-60||b>Rr+60||c<T-60||c>Bt+460)return;scratch.push(d);});
+  marketDrawables(d=>scratch.push(d));
   for(const pk of PICKUPS)if(pk.scene===scene.id&&pickupActive(pk))scratch.push({y:pk.y,x:pk.x,draw:g2=>drawPickup(g2,pk,t)});
   {const f=follower();if(f)scratch.push({y:f.y,x:f.x,draw:g2=>drawPerson(g2,f.x,f.y,f.dir,LOOKS.aisha,t,hero.moving,hero.phase*.9)});}
   scratch.push({y:hero.y+.01,x:hero.x,draw:g2=>drawHero(g2,hero.x,hero.y,hero.dir,hero.phase,hero.moving,t,time>hero.blinkAt)});

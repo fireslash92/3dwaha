@@ -31,8 +31,9 @@ function slotFor(n){
   const h=hourNow();let pick=S[S.length-1];
   for(const e of S)if(h>=e[0])pick=e;
   if(n===PEDDLER&&Math.floor((P.clock??540)/1440)%2===1)return [0,'none'];
+  if(n.market&&!marketDay())return [0,'none'];
   if((pick[1]==='village'||pick[1]==='wander')&&rainingInVillage()){ // everyone runs home from the rain
-    if(n===PEDDLER)return [0,'none'];
+    if(n===PEDDLER||n.market)return [0,'none'];
     const home=S.filter(e=>INTERIORS[e[1]]).pop();if(home)return [-1,...home.slice(1)];
   }
   return pick;

@@ -42,6 +42,7 @@ const RECIPES=[
 const baisa=n=>`${AR(n)} بيسة`;
 const COIN='<svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18"><circle cx="12" cy="12" r="9" fill="#e0a83e" stroke="#8a5a1a" stroke-width="1.6"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#fff3cc" stroke-width="1.2"/></svg>';
 const sellValue=id=>{const it=ITEMS[id];return it.mat?it.sell:it.price?Math.floor(it.price/2):0;};
+const shopSell=id=>Math.floor(sellValue(id)*((SHOP[shopId]&&SHOP[shopId].sellMult)||1));
 function equippedCount(id){return Object.values(P.eq).filter(x=>x===id).length;}
 const shopEl=$('shop'),shopBody=$('shopBody'),shopTabs=$('shopTabs');
 let shopId=null,shopTab='buy',shopMsg='';
@@ -62,9 +63,10 @@ function renderShop(reset){
     html+=`<div class="list">${SHOP[shopId].stock.map(id=>{const it=ITEMS[id],ok=P.money>=it.price;
       return row(id,it.key&&P.inv[id]?'<span class="tag-eq">تملكها</span>':`<button type="button" class="btn" data-buy="${id}"${ok?'':' disabled'}>${baisa(it.price)}</button>`);}).join('')}</div>`;
   }else if(shopTab==='race'){html+=raceBoard();
+  }else if(shopTab==='haggle'){html+=haggleBoard();
   }else if(shopTab==='sell'){
-    const ids=Object.keys(P.inv).filter(id=>ITEMS[id]&&P.inv[id]>0&&!ITEMS[id].key&&sellValue(id)>0&&P.inv[id]>equippedCount(id));
-    html+=ids.length?`<div class="list">${ids.map(id=>row(id,`<button type="button" class="btn ghost" data-sell="${id}">بيع بـ${baisa(sellValue(id))}</button>`)).join('')}</div>`
+    const ids=Object.keys(P.inv).filter(id=>ITEMS[id]&&P.inv[id]>0&&!ITEMS[id].key&&sellValue(id)>0&&P.inv[id]>equippedCount(id)&&(!SHOP[shopId].sellFilter||SHOP[shopId].sellFilter(id)));
+    html+=ids.length?`<div class="list">${ids.map(id=>row(id,`<button type="button" class="btn ghost" data-sell="${id}">بيع بـ${baisa(shopSell(id))}</button>`)).join('')}</div>`
       :'<p class="muted">لا شيء تبيعه الآن. هدايا أهل القرية والعتاد الذي تلبسه لا يُباع.</p>';
   }else{
     html+='<p class="muted">يصوغ راشد العتاد من غنائم الغابة: أشواك الضبّ وجلود الذئاب وغبار اليراعات.</p>';
@@ -80,9 +82,10 @@ shopEl.addEventListener('click',e=>{
   const d=b.dataset;
   if(b.id==='shopClose'){closeShop();return;}
   if(d.race){startRace(d.race);return;}
+  if(d.offer){haggleOffer(+d.offer);return;}
   if(d.stab){SFX.play('tab');shopTab=d.stab;shopMsg='';renderShop(true);return;}
-  if(d.buy){const it=ITEMS[d.buy];if(P.money<it.price){SFX.play('error');return;}P.money-=it.price;P.inv[d.buy]=(P.inv[d.buy]||0)+1;if(shopId==='peddler')achUnlock('peddler');SFX.play('coin');shopMsg=`اشتريت ${it.name}.${it.slot?' تجده في القائمة ← العتاد.':''}`;renderShop();saveGame();return;}
-  if(d.sell){const v=sellValue(d.sell);P.inv[d.sell]--;P.money+=v;SFX.play('coin');shopMsg=`بعت ${ITEMS[d.sell].name} بـ${baisa(v)}.`;renderShop();saveGame();return;}
+  if(d.buy){const it=ITEMS[d.buy];if(P.money<it.price){SFX.play('error');return;}P.money-=it.price;P.inv[d.buy]=(P.inv[d.buy]||0)+1;if(shopId==='peddler')achUnlock('peddler');if(SHOP[shopId].stock&&['sweets','scent','fishmonger'].includes(shopId))achUnlock('souq');SFX.play('coin');shopMsg=`اشتريت ${it.name}.${it.slot?' تجده في القائمة ← العتاد.':''}`;renderShop();saveGame();return;}
+  if(d.sell){const v=shopSell(d.sell);P.inv[d.sell]--;P.money+=v;SFX.play('coin');shopMsg=`بعت ${ITEMS[d.sell].name} بـ${baisa(v)}.`;renderShop();saveGame();return;}
   if(d.craft){const r=RECIPES.find(q=>q.id===d.craft);if(!r)return;
     if(P.money<r.cost||!Object.keys(r.need).every(m=>(P.inv[m]||0)>=r.need[m])){SFX.play('error');return;}
     P.money-=r.cost;Object.keys(r.need).forEach(m=>P.inv[m]-=r.need[m]);P.inv[r.id]=1;SFX.play('anvil');achUnlock('craft');

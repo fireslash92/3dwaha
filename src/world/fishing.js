@@ -29,9 +29,9 @@ function fishTarget(){const w=fishWater();return w?{kind:'fish',x:w.x,y:w.y+30,w
    phases: cast → wait → bite → reel → done
    ========================================================= */
 let FG=null,fishHold=false;
-function pickFish(place){
-  const h=hourNow(),rare=(WX.rain>.2?2:1)*(h<7||h>17&&h<19.5?1.6:1);
-  const pool=FISH_ORDER.filter(id=>FISH[id].where===place||FISH[id].where==='any').map(id=>[id,FISH[id].w*(id==='golden'?rare:1)]);
+function pickFish(place,bait){
+  const h=hourNow(),rare=(WX.rain>.2?2:1)*(h<7||h>17&&h<19.5?1.6:1)*(bait?3:1);
+  const pool=FISH_ORDER.filter(id=>FISH[id].where===place||FISH[id].where==='any').map(id=>[id,FISH[id].w*(id==='golden'?rare:bait&&(id==='garra'||id==='bigsad')?1.8:1)]);
   let r=Math.random()*pool.reduce((s,p)=>s+p[1],0);for(const [id,w] of pool){if((r-=w)<=0)return id;}return pool[0][0];
 }
 function startFishing(w){
@@ -46,7 +46,8 @@ function fishPress(){ // the interact button while fishing
   if(!FG)return;
   if(FG.phase==='wait'){SFX.play('cancel');endFishing('سحبت الخيط قبل أن تعضّ سمكة',1.8);return;}
   if(FG.phase==='bite'){
-    const id=pickFish(FG.place),f=FISH[id];
+    const bait=(P.inv.bait||0)>0;if(bait)P.inv.bait--;FG.bait=bait;
+    const id=pickFish(FG.place,bait),f=FISH[id];
     FG.phase='reel';FG.t0=time;FG.fish=id;FG.f=.5;FG.ft=.5;FG.fv=0;FG.nextJump=0;FG.z=.35;FG.zv=0;FG.zw=id==='golden'?.2:.26;FG.prog=.3;FG.spd=f.spd;FG.jump=f.jump;
     SFX.play('hook');buzz(25);
   }
@@ -74,14 +75,14 @@ function fishTick(dt){
   }
 }
 function landFish(){
-  const id=FG.fish,f=FISH[id],len=Math.round(f.len[0]+(f.len[1]-f.len[0])*Math.pow(Math.random(),1.4));
+  const id=FG.fish,f=FISH[id],len=Math.round(f.len[0]+(f.len[1]-f.len[0])*Math.pow(Math.random(),FG.bait?.8:1.4));
   P.inv['fish_'+id]=(P.inv['fish_'+id]||0)+1;
   P.fishLog=P.fishLog||{};const L=P.fishLog[id]=P.fishLog[id]||{n:0,best:0};L.n++;const rec=len>L.best&&L.n>1;L.best=Math.max(L.best,len);
   SFX.play(id==='golden'?'fanfare':'itemGet');buzz(id==='golden'?[60,40,60,40,120]:40);
   if(fxOn())for(let i=0;i<10;i++)PUFFS.push({x:FG.w.x,y:FG.w.y,vx:(Math.random()-.5)*50,vy:-30-Math.random()*30,r:1.5,t0:time,life:.6,col:'210,235,250'});
   RIPPLES.push({x:FG.w.x,y:FG.w.y,rx:1,t0:time,sc:scene.id});
   achCheckFish();
-  endFishing(`اصطدت ${f.name}!<small>طولها ${AR(len)} سم${rec?'، رقم قياسي جديد':''}. تجدها في الحقيبة</small>`,3.2);
+  endFishing(`اصطدت ${f.name}!<small>طولها ${AR(len)} سم${rec?'، رقم قياسي جديد':''}${FG.bait?'، بالطُّعم':''}. تجدها في الحقيبة</small>`,3.2);
   saveGame();
 }
 

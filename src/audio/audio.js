@@ -121,6 +121,7 @@ const SFX=(()=>{
     meow:o=>{const v=.04*(o.vol??1);tone({f:620,f2:920,type:'triangle',lp:2600,a:.03,dur:.18,v,pan:o.pan,slide:.15});tone({f:920,f2:520,type:'triangle',lp:2600,dur:.22,v,d:.17,pan:o.pan});},
     flap:o=>{const v=.06*(o.vol??1);for(let i=0;i<7;i++)noise({type:'bandpass',f:900+Math.random()*700,q:1.2,dur:.035,v,d:i*.05,pan:o.pan});},
     thunder:o=>{const v=o.vol??1;noise({type:'highpass',f:1800,dur:.12,v:.08*v});noise({type:'lowpass',f:420,f2:90,a:.05,dur:2.6,v:.32*v,pan:Math.random()-.5});noise({type:'lowpass',f:200,a:.4,dur:2.2,v:.22*v,d:.5});tone({f:55,f2:38,a:.1,dur:1.6,v:.12*v});},
+    chatter:o=>{const v=.035*(o.vol??1),f=160+Math.random()*220,n=2+(Math.random()*4|0);for(let i=0;i<n;i++)tone({f:f*(1+(Math.random()-.4)*.3),type:'triangle',lp:1800,dur:.05,v,d:i*.08,pan:o.pan});},
     hoof:o=>{const v=o.vol??1;tone({f:95,f2:55,dur:.07,v:.16*v});noise({type:'lowpass',f:700,dur:.05,v:.08*v});tone({f:85,f2:50,dur:.06,v:.1*v,d:.12});},
     perfect:()=>{tone({f:1568,type:'triangle',dur:.1,v:.07});tone({f:2093,type:'triangle',dur:.12,v:.05,d:.05});},
     stumble:()=>{tone({f:160,f2:60,dur:.2,v:.22});noise({type:'lowpass',f:900,dur:.25,v:.16});noise({type:'bandpass',f:2000,dur:.15,v:.05,d:.1});},
@@ -139,7 +140,7 @@ const SFX=(()=>{
   };
   function play(name,o){if(!ready()||!S[name])return;try{S[name](o||{});}catch(err){(window.__sfxErr=window.__sfxErr||[]).push(name+': '+err.message);}}
   const names=()=>Object.keys(S);
-  const VOICES={mubarak:165,peddler:150,salem:140,saeed:175,rashid:160,hamad:330,mariam:280,shamsa:400,ummsaeed:235,aisha:300,zuwaina:215};
+  const VOICES={ummhilal:260,sulaiman:170,jumaa:190,mubarak:165,peddler:150,salem:140,saeed:175,rashid:160,hamad:330,mariam:280,shamsa:400,ummsaeed:235,aisha:300,zuwaina:215};
   function voice(n,text){if(!n)return;if(n.portrait){play('mystic');return;}play('voice',{f:VOICES[n.id]||220,n:Math.min(6,Math.max(2,Math.ceil(text.length/12)))});}
   function step(kind,pan){play('step',{kind,pan});}
   /* ---- music: original tunes in Arabic maqamat (bayati for the village, hijaz for danger) ---- */

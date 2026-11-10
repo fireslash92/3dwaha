@@ -2069,6 +2069,7 @@ function chooseDir(v,cur){
 }
 function collidersFor(who){
   const list=scene.colliders.filter(c=>!(c.tag==='barricade'&&chapterDone)&&!(c.tag==='eastgate'&&P.flags.ch3)&&!(c.tag==='rockfall'&&P.flags.ch4)&&!(c.tag==='innergate'&&P.flags.gateopen));
+  if(scene.id==='village')marketColliders(list);
   for(const n of NPCS)if(n!==who&&n.scene===scene.id)list.push({t:'c',x:n.x,y:n.y-1,r:NPC_R});
   if(who!==hero)list.push({t:'c',x:hero.x,y:hero.y,r:HERO_R});
   return list;
@@ -2119,7 +2120,7 @@ function findTarget(){
 function update(dt){
   time+=dt;
   if(state==='race'||RACE){raceTick(dt);return;}
-  lifeTick(dt);weatherTick(dt);puddleFeel(dt);fishTick(dt);achTick(dt);
+  lifeTick(dt);weatherTick(dt);puddleFeel(dt);fishTick(dt);achTick(dt);marketTick(dt);
   for(const n of NPCS)if(n.route&&n.route.length&&n.scene!==scene.id)walkRoute(n,dt);
   if(talkCooldown>0)talkCooldown-=dt;
   if(state==='play'||state==='dialog'||state==='fish')P.clock=(P.clock??540)+dt*DAY_RATE;
@@ -2208,6 +2209,7 @@ function render(){
   for(const d of scene.statics){const b=d.b;if(b[2]<L||b[0]>Rr||b[3]<T||b[1]>Bt)continue;scratch.push(d);}
   for(const n of NPCS)if(n.scene===scene.id)scratch.push({y:n.y,x:n.x,draw:g2=>drawPerson(g2,n.x,n.y,n.dir,n.look,t,n.moving,n.phase)});
   lifeDrawables(d=>{const b=d.x,c=d.y;if(b<L-60||b>Rr+60||c<T-60||c>Bt+460)return;scratch.push(d);});
+  marketDrawables(d=>scratch.push(d));
   for(const pk of PICKUPS)if(pk.scene===scene.id&&pickupActive(pk))scratch.push({y:pk.y,x:pk.x,draw:g2=>drawPickup(g2,pk,t)});
   {const f=follower();if(f)scratch.push({y:f.y,x:f.x,draw:g2=>drawPerson(g2,f.x,f.y,f.dir,LOOKS.aisha,t,hero.moving,hero.phase*.9)});}
   scratch.push({y:hero.y+.01,x:hero.x,draw:g2=>drawHero(g2,hero.x,hero.y,hero.dir,hero.phase,hero.moving,t,time>hero.blinkAt)});
@@ -3066,6 +3068,7 @@ const SFX=(()=>{
     meow:o=>{const v=.04*(o.vol??1);tone({f:620,f2:920,type:'triangle',lp:2600,a:.03,dur:.18,v,pan:o.pan,slide:.15});tone({f:920,f2:520,type:'triangle',lp:2600,dur:.22,v,d:.17,pan:o.pan});},
     flap:o=>{const v=.06*(o.vol??1);for(let i=0;i<7;i++)noise({type:'bandpass',f:900+Math.random()*700,q:1.2,dur:.035,v,d:i*.05,pan:o.pan});},
     thunder:o=>{const v=o.vol??1;noise({type:'highpass',f:1800,dur:.12,v:.08*v});noise({type:'lowpass',f:420,f2:90,a:.05,dur:2.6,v:.32*v,pan:Math.random()-.5});noise({type:'lowpass',f:200,a:.4,dur:2.2,v:.22*v,d:.5});tone({f:55,f2:38,a:.1,dur:1.6,v:.12*v});},
+    chatter:o=>{const v=.035*(o.vol??1),f=160+Math.random()*220,n=2+(Math.random()*4|0);for(let i=0;i<n;i++)tone({f:f*(1+(Math.random()-.4)*.3),type:'triangle',lp:1800,dur:.05,v,d:i*.08,pan:o.pan});},
     hoof:o=>{const v=o.vol??1;tone({f:95,f2:55,dur:.07,v:.16*v});noise({type:'lowpass',f:700,dur:.05,v:.08*v});tone({f:85,f2:50,dur:.06,v:.1*v,d:.12});},
     perfect:()=>{tone({f:1568,type:'triangle',dur:.1,v:.07});tone({f:2093,type:'triangle',dur:.12,v:.05,d:.05});},
     stumble:()=>{tone({f:160,f2:60,dur:.2,v:.22});noise({type:'lowpass',f:900,dur:.25,v:.16});noise({type:'bandpass',f:2000,dur:.15,v:.05,d:.1});},
@@ -3084,7 +3087,7 @@ const SFX=(()=>{
   };
   function play(name,o){if(!ready()||!S[name])return;try{S[name](o||{});}catch(err){(window.__sfxErr=window.__sfxErr||[]).push(name+': '+err.message);}}
   const names=()=>Object.keys(S);
-  const VOICES={mubarak:165,peddler:150,salem:140,saeed:175,rashid:160,hamad:330,mariam:280,shamsa:400,ummsaeed:235,aisha:300,zuwaina:215};
+  const VOICES={ummhilal:260,sulaiman:170,jumaa:190,mubarak:165,peddler:150,salem:140,saeed:175,rashid:160,hamad:330,mariam:280,shamsa:400,ummsaeed:235,aisha:300,zuwaina:215};
   function voice(n,text){if(!n)return;if(n.portrait){play('mystic');return;}play('voice',{f:VOICES[n.id]||220,n:Math.min(6,Math.max(2,Math.ceil(text.length/12)))});}
   function step(kind,pan){play('step',{kind,pan});}
   /* ---- music: original tunes in Arabic maqamat (bayati for the village, hijaz for danger) ---- */
@@ -3283,6 +3286,7 @@ const RECIPES=[
 const baisa=n=>`${AR(n)} بيسة`;
 const COIN='<svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18"><circle cx="12" cy="12" r="9" fill="#e0a83e" stroke="#8a5a1a" stroke-width="1.6"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#fff3cc" stroke-width="1.2"/></svg>';
 const sellValue=id=>{const it=ITEMS[id];return it.mat?it.sell:it.price?Math.floor(it.price/2):0;};
+const shopSell=id=>Math.floor(sellValue(id)*((SHOP[shopId]&&SHOP[shopId].sellMult)||1));
 function equippedCount(id){return Object.values(P.eq).filter(x=>x===id).length;}
 const shopEl=$('shop'),shopBody=$('shopBody'),shopTabs=$('shopTabs');
 let shopId=null,shopTab='buy',shopMsg='';
@@ -3303,9 +3307,10 @@ function renderShop(reset){
     html+=`<div class="list">${SHOP[shopId].stock.map(id=>{const it=ITEMS[id],ok=P.money>=it.price;
       return row(id,it.key&&P.inv[id]?'<span class="tag-eq">تملكها</span>':`<button type="button" class="btn" data-buy="${id}"${ok?'':' disabled'}>${baisa(it.price)}</button>`);}).join('')}</div>`;
   }else if(shopTab==='race'){html+=raceBoard();
+  }else if(shopTab==='haggle'){html+=haggleBoard();
   }else if(shopTab==='sell'){
-    const ids=Object.keys(P.inv).filter(id=>ITEMS[id]&&P.inv[id]>0&&!ITEMS[id].key&&sellValue(id)>0&&P.inv[id]>equippedCount(id));
-    html+=ids.length?`<div class="list">${ids.map(id=>row(id,`<button type="button" class="btn ghost" data-sell="${id}">بيع بـ${baisa(sellValue(id))}</button>`)).join('')}</div>`
+    const ids=Object.keys(P.inv).filter(id=>ITEMS[id]&&P.inv[id]>0&&!ITEMS[id].key&&sellValue(id)>0&&P.inv[id]>equippedCount(id)&&(!SHOP[shopId].sellFilter||SHOP[shopId].sellFilter(id)));
+    html+=ids.length?`<div class="list">${ids.map(id=>row(id,`<button type="button" class="btn ghost" data-sell="${id}">بيع بـ${baisa(shopSell(id))}</button>`)).join('')}</div>`
       :'<p class="muted">لا شيء تبيعه الآن. هدايا أهل القرية والعتاد الذي تلبسه لا يُباع.</p>';
   }else{
     html+='<p class="muted">يصوغ راشد العتاد من غنائم الغابة: أشواك الضبّ وجلود الذئاب وغبار اليراعات.</p>';
@@ -3321,9 +3326,10 @@ shopEl.addEventListener('click',e=>{
   const d=b.dataset;
   if(b.id==='shopClose'){closeShop();return;}
   if(d.race){startRace(d.race);return;}
+  if(d.offer){haggleOffer(+d.offer);return;}
   if(d.stab){SFX.play('tab');shopTab=d.stab;shopMsg='';renderShop(true);return;}
-  if(d.buy){const it=ITEMS[d.buy];if(P.money<it.price){SFX.play('error');return;}P.money-=it.price;P.inv[d.buy]=(P.inv[d.buy]||0)+1;if(shopId==='peddler')achUnlock('peddler');SFX.play('coin');shopMsg=`اشتريت ${it.name}.${it.slot?' تجده في القائمة ← العتاد.':''}`;renderShop();saveGame();return;}
-  if(d.sell){const v=sellValue(d.sell);P.inv[d.sell]--;P.money+=v;SFX.play('coin');shopMsg=`بعت ${ITEMS[d.sell].name} بـ${baisa(v)}.`;renderShop();saveGame();return;}
+  if(d.buy){const it=ITEMS[d.buy];if(P.money<it.price){SFX.play('error');return;}P.money-=it.price;P.inv[d.buy]=(P.inv[d.buy]||0)+1;if(shopId==='peddler')achUnlock('peddler');if(SHOP[shopId].stock&&['sweets','scent','fishmonger'].includes(shopId))achUnlock('souq');SFX.play('coin');shopMsg=`اشتريت ${it.name}.${it.slot?' تجده في القائمة ← العتاد.':''}`;renderShop();saveGame();return;}
+  if(d.sell){const v=shopSell(d.sell);P.inv[d.sell]--;P.money+=v;SFX.play('coin');shopMsg=`بعت ${ITEMS[d.sell].name} بـ${baisa(v)}.`;renderShop();saveGame();return;}
   if(d.craft){const r=RECIPES.find(q=>q.id===d.craft);if(!r)return;
     if(P.money<r.cost||!Object.keys(r.need).every(m=>(P.inv[m]||0)>=r.need[m])){SFX.play('error');return;}
     P.money-=r.cost;Object.keys(r.need).forEach(m=>P.inv[m]-=r.need[m]);P.inv[r.id]=1;SFX.play('anvil');achUnlock('craft');
@@ -4001,8 +4007,9 @@ function slotFor(n){
   const h=hourNow();let pick=S[S.length-1];
   for(const e of S)if(h>=e[0])pick=e;
   if(n===PEDDLER&&Math.floor((P.clock??540)/1440)%2===1)return [0,'none'];
+  if(n.market&&!marketDay())return [0,'none'];
   if((pick[1]==='village'||pick[1]==='wander')&&rainingInVillage()){ // everyone runs home from the rain
-    if(n===PEDDLER)return [0,'none'];
+    if(n===PEDDLER||n.market)return [0,'none'];
     const home=S.filter(e=>INTERIORS[e[1]]).pop();if(home)return [-1,...home.slice(1)];
   }
   return pick;
@@ -4462,9 +4469,9 @@ function fishTarget(){const w=fishWater();return w?{kind:'fish',x:w.x,y:w.y+30,w
    phases: cast → wait → bite → reel → done
    ========================================================= */
 let FG=null,fishHold=false;
-function pickFish(place){
-  const h=hourNow(),rare=(WX.rain>.2?2:1)*(h<7||h>17&&h<19.5?1.6:1);
-  const pool=FISH_ORDER.filter(id=>FISH[id].where===place||FISH[id].where==='any').map(id=>[id,FISH[id].w*(id==='golden'?rare:1)]);
+function pickFish(place,bait){
+  const h=hourNow(),rare=(WX.rain>.2?2:1)*(h<7||h>17&&h<19.5?1.6:1)*(bait?3:1);
+  const pool=FISH_ORDER.filter(id=>FISH[id].where===place||FISH[id].where==='any').map(id=>[id,FISH[id].w*(id==='golden'?rare:bait&&(id==='garra'||id==='bigsad')?1.8:1)]);
   let r=Math.random()*pool.reduce((s,p)=>s+p[1],0);for(const [id,w] of pool){if((r-=w)<=0)return id;}return pool[0][0];
 }
 function startFishing(w){
@@ -4479,7 +4486,8 @@ function fishPress(){ // the interact button while fishing
   if(!FG)return;
   if(FG.phase==='wait'){SFX.play('cancel');endFishing('سحبت الخيط قبل أن تعضّ سمكة',1.8);return;}
   if(FG.phase==='bite'){
-    const id=pickFish(FG.place),f=FISH[id];
+    const bait=(P.inv.bait||0)>0;if(bait)P.inv.bait--;FG.bait=bait;
+    const id=pickFish(FG.place,bait),f=FISH[id];
     FG.phase='reel';FG.t0=time;FG.fish=id;FG.f=.5;FG.ft=.5;FG.fv=0;FG.nextJump=0;FG.z=.35;FG.zv=0;FG.zw=id==='golden'?.2:.26;FG.prog=.3;FG.spd=f.spd;FG.jump=f.jump;
     SFX.play('hook');buzz(25);
   }
@@ -4507,14 +4515,14 @@ function fishTick(dt){
   }
 }
 function landFish(){
-  const id=FG.fish,f=FISH[id],len=Math.round(f.len[0]+(f.len[1]-f.len[0])*Math.pow(Math.random(),1.4));
+  const id=FG.fish,f=FISH[id],len=Math.round(f.len[0]+(f.len[1]-f.len[0])*Math.pow(Math.random(),FG.bait?.8:1.4));
   P.inv['fish_'+id]=(P.inv['fish_'+id]||0)+1;
   P.fishLog=P.fishLog||{};const L=P.fishLog[id]=P.fishLog[id]||{n:0,best:0};L.n++;const rec=len>L.best&&L.n>1;L.best=Math.max(L.best,len);
   SFX.play(id==='golden'?'fanfare':'itemGet');buzz(id==='golden'?[60,40,60,40,120]:40);
   if(fxOn())for(let i=0;i<10;i++)PUFFS.push({x:FG.w.x,y:FG.w.y,vx:(Math.random()-.5)*50,vy:-30-Math.random()*30,r:1.5,t0:time,life:.6,col:'210,235,250'});
   RIPPLES.push({x:FG.w.x,y:FG.w.y,rx:1,t0:time,sc:scene.id});
   achCheckFish();
-  endFishing(`اصطدت ${f.name}!<small>طولها ${AR(len)} سم${rec?'، رقم قياسي جديد':''}. تجدها في الحقيبة</small>`,3.2);
+  endFishing(`اصطدت ${f.name}!<small>طولها ${AR(len)} سم${rec?'، رقم قياسي جديد':''}${FG.bait?'، بالطُّعم':''}. تجدها في الحقيبة</small>`,3.2);
   saveGame();
 }
 
@@ -4810,6 +4818,141 @@ function drawRaceHud(g,W,H,px,tagY,k){
   }
 }
 
+// ---- src/world/market.js ----
+// سوق القرية: كل ثلاثة أيام تُنصب البسطات في ساحة النافورة صباحًا، فيها حلوى وعطور وسمك، ومساومة على بضاعة نادرة
+
+/* =========================================================
+   WHEN: every third day, from seven until one, after the first chapter
+   ========================================================= */
+const MARKET_EVERY=3;
+const dayNow=()=>Math.floor((P.clock??540)/1440);
+const marketDay=(d=dayNow())=>chapterDone&&d%MARKET_EVERY===2;
+const marketOpen=()=>{const h=hourNow();return marketDay()&&h>=7&&h<13;};
+const stallsUp=()=>{const h=hourNow();return marketDay()&&h>=6.2&&h<13.5&&scene.id==='village';};
+function marketNote(){
+  if(!chapterDone)return '';
+  if(marketOpen())return ' اليوم يوم السوق في ساحة النافورة حتى الواحدة ظهرًا.';
+  const d=dayNow(),h=hourNow();let k=0;while(!marketDay(d+k)||(k===0&&h>=13))k++;
+  return k===0?' السوق يُفتح اليوم في السابعة صباحًا.':k===1?' السوق غدًا صباحًا في ساحة النافورة.':` السوق بعد ${AR(k)} أيام في ساحة النافورة.`;
+}
+
+/* =========================================================
+   THE STALLS AND THEIR SELLERS
+   ========================================================= */
+const STALLS=[
+  {id:'sweets',x:462,y:404,awn:['#c0392b','#f3ead8'],goods:'sweets'},
+  {id:'scent',x:690,y:400,awn:['#2f6b4f','#e9c86a'],goods:'scent'},
+  {id:'fish',x:484,y:500,awn:['#2f5f8f','#f3ead8'],goods:'fish'},
+];
+const STALL_COLLIDERS=STALLS.map(s=>({t:'r',x:s.x-28,y:s.y-8,w:56,h:12,tag:'stall'}));
+function marketColliders(list){if(stallsUp())for(const c of STALL_COLLIDERS)list.push(c);}
+
+Object.assign(ITEMS,{
+  regag:{name:'خبز رقاق',use:'hp',amount:35,icon:'sweets',col:'#d9b072',price:25,desc:'رقيق ومقرمش، من صاج أم هلال. يعيد ٣٥ من الصحة.'},
+  luqaimat:{name:'لقيمات بالدبس',use:'hp',amount:50,icon:'honey',col:'#c98a2a',price:45,desc:'كرات ذهبية بدبس التمر. تعيد ٥٠ من الصحة.'},
+  hojari:{name:'لبان حوجري',use:'mp',amount:40,icon:'incense',col:'#e9dcc0',price:110,desc:'أجود لبان ظفار. يعيد ٤٠ من الطاقة.'},
+  oud:{name:'دهن العود',slot:'acc',icon:'flask',col:'#5a3a22',stats:{wis:2,luk:1},price:380,desc:'قارورة صغيرة من دهن العود. رائحتها تصفّي الذهن.'},
+  bait:{name:'طُعم',tool:true,icon:'dust',col:'#a8834e',price:15,desc:'يُستعمل تلقائيًا عند الصيد. يجذب الأسماك الكبيرة والنادرة.'},
+  // rare goods, one of them on each market day, only by haggling
+  feroz:{name:'خاتم الفيروز',slot:'acc',icon:'ring',col:'#3fa3a0',stats:{luk:3,def:2},price:600,desc:'فضة نزوانية يتوسطها فيروز أزرق.'},
+  bisht:{name:'بشت مطرّز',slot:'body',icon:'robe',col:'#3a2a1c',stats:{def:5,wis:2},price:900,desc:'عباءة رجالية بحواف من خيوط الذهب.'},
+  suri:{name:'خنجر صوري',slot:'weapon',icon:'dagger',col:'#c9a046',stats:{atk:10,agi:1},price:1100,desc:'صنعة صور القديمة، مقبضه من قرن ونصله مصقول.'},
+  massar:{name:'مصر كشميري',slot:'head',icon:'cap',col:'#7a2f5a',stats:{def:3,wis:3,luk:1},price:700,desc:'عمامة من صوف كشمير بنقوش دقيقة.'},
+});
+const RARE_GOODS=['feroz','massar','bisht','suri'];
+const VENDOR=(id,name,look,x,y,shop,lines)=>{const n={id,name,scene:'none',x,y,dir:'down',look,noMeet:true,shop,talked:0,market:true,lines:null,repeat:lines,phase:0,moving:false,lookAt:2,pause:1,target:null,stuck:0};
+  n.lines=n.repeat;n.home={x,y,dir:'down',scene:'none'};NPCS.push(n);SCHED[id]=[[0,'none'],[6.2,'village',x,y,'down'],[13,'none']];return n;};
+const UMMHILAL=VENDOR('ummhilal','أم هلال',{g:'f',age:'old',dress:'#7a3a5a',dressSh:'#5e2b45',emb:'#e2b54a',emb2:'#f7e3a6',scarf:'#1f1a1e',scarfSh:'#120e12',scarfTrim:'#c9473a',sirwal:'#e2b54a',skin:'#c99068'},STALLS[0].x,STALLS[0].y-16,'sweets',
+  ['يا هلا بالضيف! رقاق حار من الصاج، ولقيمات بدبس التمر.','ذوق قبل لا تشتري، ما عليك حساب.']);
+const SULAIMAN=VENDOR('sulaiman','سليمان',{g:'m',robe:'#f3ead8',robeSh:'#d6cbb3',tassel:'#8a6a3a',head:'massar',hw:['#7a2f5a','#e9c86a','#f3ead8'],hair:'#2a1e16',beard:'#2a1e16',skin:'#b97d52'},STALLS[1].x,STALLS[1].y-16,'scent',
+  ['العطر عطر، والبخور بخور! عندي لبان حوجري من ظفار ودهن عود ما له مثيل.','وعندي اليوم قطعة نادرة… لكن سعرها بالمساومة، شطارتك تحدد سعرها.']);
+const JUMAA=VENDOR('jumaa','جمعة',{g:'m',robe:'#cfe0e6',robeSh:'#a8bec6',tassel:'#5a7a86',head:'kumma',hw:['#f7f3ea','#2f5f8f'],hair:'#1f1712',beard:'#1f1712',skin:'#a8714a'},STALLS[2].x,STALLS[2].y-16,'fishmonger',
+  ['سمك! سمك طازج! أشتري صيدك بسعر أحسن من سعيد.','وعندي طُعم يجيب لك الكبار، وربما… الذهبية.']);
+Object.assign(SHOP,{
+  sweets:{title:'بسطة أم هلال',sub:'حلوى وخبز من صاج الحطب',tabs:[['buy','شراء']],stock:['regag','luqaimat','halwa','dates']},
+  scent:{title:'عطور سليمان',sub:'لبان وعود ومساومة على النادر',tabs:[['buy','شراء'],['haggle','مساومة']],stock:['hojari','incense','oud']},
+  fishmonger:{title:'بسطة جمعة',sub:'يشتري السمك بسعر أفضل بمرة ونصف',tabs:[['sell','بيع السمك'],['buy','شراء']],stock:['bait'],sellMult:1.5,sellFilter:id=>id.startsWith('fish_')},
+});
+
+/* =========================================================
+   HAGGLING: offer less, read the seller's mood, don't push too far
+   ========================================================= */
+function haggleState(){
+  const d=dayNow();
+  if(!P.haggle||P.haggle.day!==d){
+    const R=mulberry(d*131+7),id=RARE_GOODS[d/MARKET_EVERY%RARE_GOODS.length|0],list=ITEMS[id].price,luk=typeof stat==='function'?stat('luk'):6;
+    P.haggle={day:d,id,ask:list,min:Math.round(list*(.6+R()*.14)*(1-Math.min(.08,(luk-6)*.01))/5)*5,patience:3,done:false,line:'هذي القطعة ما تلقاها إلا عندي. كم تعطيني؟'};
+  }
+  return P.haggle;
+}
+const round5=v=>Math.max(5,Math.round(v/5)*5);
+function haggleBoard(){
+  const H=haggleState(),it=ITEMS[H.id],list=it.price;
+  if(H.done)return `<div class="quest"><b>${H.bought?'بعتها لك. مبروك عليك!':'سليمان مشغول عنك اليوم.'}</b><p class="muted" style="margin:4px 0 0">${H.bought?`اشتريت ${it.name} بـ${baisa(H.bought)} بدل ${baisa(list)}.`:'زعّلته بعروضك. تعال في يوم السوق القادم، وعنده بضاعة جديدة.'}</p></div>`;
+  const offers=[.9,.8,.7].map(k=>round5(H.ask*k)).filter((v,i,a)=>a.indexOf(v)===i&&v<H.ask);
+  const mood=H.patience>=3?'رايق':H.patience===2?'بدأ يتضايق':'على وشك يزعل';
+  return `<div class="row">${icon(it.icon,it.col)}<span class="grow"><span class="val">${it.name}</span><span class="lbl">${it.desc}</span><span class="chips">${chipsOf(it.stats)}<span class="chip">السعر الأصلي ${baisa(list)}</span></span></span></div>
+  <div class="quest" style="margin-top:10px"><b>سليمان: «${H.line}»</b><p class="muted" style="margin:4px 0 0">يطلب الآن ${baisa(H.ask)}. مزاجه: ${mood} ${'●'.repeat(H.patience)}${'○'.repeat(3-H.patience)}</p></div>
+  <div class="actions" style="flex-wrap:wrap;gap:8px">${offers.map(v=>`<button type="button" class="btn ghost" data-offer="${v}"${P.money<v?' disabled':''}>اعرض ${baisa(v)}</button>`).join('')}<button type="button" class="btn" data-offer="${H.ask}"${P.money<H.ask?' disabled':''}>اشترِ بـ${baisa(H.ask)}</button></div>
+  <p class="muted">العرض القليل جدًا يضايقه، وإذا زعل ثلاث مرات ما يبيعك اليوم. الحظ العالي يليّن قلبه.</p>`;
+}
+function haggleOffer(o){
+  const H=haggleState();if(H.done||P.money<o){SFX.play('error');return;}
+  const list=ITEMS[H.id].price;
+  const buy=price=>{P.money-=price;P.inv[H.id]=(P.inv[H.id]||0)+1;H.done=true;H.bought=price;SFX.play('coin');SFX.play('itemGet');achUnlock('souq');if(price<=list*.75)achUnlock('haggle');$('menuDot').hidden=false;shopMsg=`اشتريت ${ITEMS[H.id].name}. البسه من القائمة ← العتاد.`;};
+  if(o>=H.ask)buy(o);
+  else if(o>=H.min+(H.ask-H.min)*.35){H.line='ما عليه، عشانك أنت. اتفقنا!';buy(o);}
+  else if(o>=H.min){H.ask=round5(Math.max(H.min,(H.ask+o)/2));H.line=['صعبة… بس ممكن نتفاهم. آخر كلام عندي','لا والله ما توفي، بس عشان الجيرة'][(Math.random()*2)|0]+` ${AR(H.ask)}.`;SFX.play('confirm');}
+  else{H.patience--;H.ask=round5(Math.max(H.min,H.ask*.97));
+    if(H.patience<=0){H.done=true;H.line='';SFX.play('error');}
+    else{H.line=['حرام عليك! هذي بضاعة من الهند ونزوى!','تبيني أخسر؟ لا لا لا.','تمزح أكيد!'][(Math.random()*3)|0];SFX.play('cancel');}}
+  renderShop();saveGame();
+}
+
+/* =========================================================
+   LIFE AROUND THE STALLS
+   ========================================================= */
+let chatterT=2;
+function marketTick(dt){
+  if(!stallsUp()||state!=='play'&&state!=='dialog')return;
+  const day=dayNow();
+  if(marketOpen()&&state==='play'&&WX.rain<.12&&!(WX.told['market'+day])){WX.told['market'+day]=1;notify('اليوم يوم السوق!<small>البسطات في ساحة النافورة حتى الواحدة ظهرًا</small>',3.4);}
+  if(!marketOpen()||WX.rain>.12)return;
+  chatterT-=dt;
+  const d=Math.hypot(hero.x-576,(hero.y-450)*1.2),vol=clamp(1-d/420,0,1);
+  if(chatterT<=0){chatterT=.5+Math.random()*1.4;if(vol>0)SFX.play('chatter',{pan:clamp((STALLS[(Math.random()*3)|0].x-hero.x)/240,-1,1),vol});}
+}
+function drawStall(g,s,t){
+  const x=s.x,y=s.y,shut=WX.rain>.12||!marketOpen();
+  softShadow(g,x,y+4,34,7,.35);
+  // posts and table
+  g.fillStyle='#6b4a2b';[-27,25].forEach(dx=>{g.fillRect(x+dx,y-84,3,84);});
+  g.fillStyle='#8a5e36';g.fillRect(x-30,y-12,60,10);g.fillStyle='#6b4a2b';g.fillRect(x-30,y-3,60,3);
+  g.fillStyle='#e9dcc0';g.fillRect(x-30,y-14,60,3);
+  // awning (striped cloth, a small sway)
+  const sw=Math.sin(t*1.3+x)*1.2;
+  for(let i=0;i<6;i++){g.fillStyle=s.awn[i%2];g.beginPath();g.moveTo(x-32+i*10.7,y-88);g.lineTo(x-32+(i+1)*10.7,y-88);g.lineTo(x-32+(i+1)*10.7+sw,y-78);g.lineTo(x-32+i*10.7+sw,y-78);g.closePath();g.fill();}
+  for(let i=0;i<6;i++){g.fillStyle=s.awn[i%2];g.beginPath();g.arc(x-26.6+i*10.7+sw,y-78,5.3,0,Math.PI);g.fill();}
+  if(shut){g.fillStyle='rgba(120,100,70,.92)';g.fillRect(x-30,y-22,60,10);g.fillStyle='rgba(90,70,45,.9)';for(let i=0;i<4;i++)g.fillRect(x-28+i*15,y-22,1.2,10);return;}
+  // goods
+  if(s.goods==='sweets'){
+    g.fillStyle='#d9c9a6';ell(g,x-16,y-15,9,3.2);g.fill();g.fillStyle='#6b2e14';ell(g,x-16,y-17,7,2.8);g.fill();g.fillStyle='rgba(255,210,140,.5)';ell(g,x-18,y-18,3,1);g.fill();
+    g.fillStyle='#b98a44';rr(g,x-4,y-21,12,7,2);g.fill();g.fillStyle='#5a2a12';for(let i=0;i<4;i++)circ(g,x-1+i*2.4,y-21,1.5);
+    g.fillStyle='#d9b072';for(let i=0;i<3;i++){ell(g,x+16+i*1.5,y-16-i*1.6,7,2.4);g.fill();}
+    if(fxOn()){g.fillStyle='rgba(255,255,255,.35)';for(let i=0;i<3;i++){const q=(t*.6+i/3)%1;circ(g,x+16+Math.sin(t*2+i)*2,y-22-q*14,1.6*(1-q)+.4);}}
+  }else if(s.goods==='scent'){
+    const bt=[['#8a3a5a',-20],['#2f6b4f',-13],['#c9a046',-6]];bt.forEach(([c,dx])=>{g.fillStyle=c;rr(g,x+dx,y-23,5,9,2);g.fill();g.fillStyle='#e9c86a';g.fillRect(x+dx+1.4,y-26,2.2,3);});
+    g.fillStyle='#9a7a52';g.beginPath();g.moveTo(x+6,y-14);g.lineTo(x+16,y-14);g.lineTo(x+14,y-22);g.lineTo(x+8,y-22);g.closePath();g.fill();g.fillStyle='#6b4a2b';ell(g,x+11,y-22,5,1.8);g.fill();
+    g.fillStyle='#f3ead8';for(let i=0;i<5;i++)circ(g,x+20+(i%3)*2.6,y-16-(i>2?2:0),1.3);
+    if(fxOn())for(let i=0;i<4;i++){const q=(t*.35+i/4)%1;g.fillStyle=`rgba(235,230,220,${.45*(1-q)})`;circ(g,x+11+Math.sin(t*1.5+i*2)*3*q,y-26-q*22,2+q*3);}
+  }else{
+    g.fillStyle='#6f8a3c';ell(g,x-12,y-16,13,3.6);g.fill();ell(g,x+12,y-16,13,3.6);g.fill();
+    [[-16,'#9fb7a8'],[-8,'#7d8f6a'],[8,'#7aa6b8'],[16,'#9fb7a8']].forEach(([dx,c])=>{g.save();g.translate(x+dx,y-18);g.rotate(dx>0?.2:-.2);g.fillStyle=c;ell(g,0,0,6,2.2);g.fill();g.beginPath();g.moveTo(-5,0);g.lineTo(-8,-2);g.lineTo(-8,2);g.fill();g.restore();});
+    g.fillStyle='#8a6a3a';rr(g,x-4,y-24,9,8,2);g.fill();g.fillStyle='#a8834e';ell(g,x+.5,y-24,4.5,1.6);g.fill();
+  }
+}
+function marketDrawables(push){if(!stallsUp())return;for(const s of STALLS)push({y:s.y-2,x:s.x,draw:(g,t)=>drawStall(g,s,t)});}
+
 // ---- src/ui/minimap.js ----
 // الخريطة الصغيرة
 
@@ -5003,7 +5146,7 @@ function renderMenu(resetScroll){
 function tabStatus(){
   const ks=['hp','mp','atk','def','agi','wis','luk'];
   const hh=hourNow(),hm=`${AR(Math.floor(hh))}:${AR(String(Math.floor((hh%1)*60)).padStart(2,'0'))}`,outdoor=scene.id==='village'||scene.interior;
-  return `<div class="set" style="padding:6px 0 12px"><div class="grow"><b>الوقت: ${phaseName()}، والطقس ${wxLabel()}</b><div class="muted">الساعة ${hm}. في الليل تظهر مخلوقات أخرى في الغابة</div></div>${outdoor?`<div class="actions"><button type="button" class="btn" data-act="wait" data-h="${isNight()?7:20}">${isNight()?'استرح حتى الصباح':'استرح حتى الليل'}</button></div>`:''}</div>
+  return `<div class="set" style="padding:6px 0 12px"><div class="grow"><b>الوقت: ${phaseName()}، والطقس ${wxLabel()}</b><div class="muted">الساعة ${hm}. في الليل تظهر مخلوقات أخرى في الغابة.${marketNote()}</div></div>${outdoor?`<div class="actions"><button type="button" class="btn" data-act="wait" data-h="${isNight()?7:20}">${isNight()?'استرح حتى الصباح':'استرح حتى الليل'}</button></div>`:''}</div>
   <h3>الخصائص</h3><div class="stats">${ks.map(k=>{const b=bonusStat(k);return `<div class="stat"><div class="n"><b>${STAT_NAMES[k]}</b><small>${STAT_NOTES[k]}</small></div><div class="v">${AR(stat(k))}${b?`<em>${num(b)}</em>`:''}</div></div>`;}).join('')}
   <div class="stat"><div class="n"><b>سرعة المشي</b><small>من الرشاقة والمهارات</small></div><div class="v">${AR(Math.round(heroSpeed()/SPEED*100))}٪</div></div></div>
   ${P.flags.aisha?`<h4>عائشة · رفيقة الرحلة</h4><div class="stats">${['hp','mp','atk','def','agi','wis'].map(k=>`<div class="stat"><div class="n"><b>${STAT_NAMES[k]}</b></div><div class="v">${AR(k==='hp'?allyHP():k==='mp'?allyMP():allyStat(k))}${k==='hp'||k==='mp'?`<em> / ${AR(allyStat(k))}</em>`:''}</div></div>`).join('')}</div>`:''}
@@ -5029,7 +5172,7 @@ function tabBag(){
   const ids=Object.keys(P.inv).filter(id=>P.inv[id]>0&&ITEMS[id]);
   const equipped=new Set(Object.values(P.eq));
   const row=(id,extra)=>{const it=ITEMS[id];return `<div class="row">${icon(it.icon,it.col)}<span class="grow"><span class="val">${it.name}${P.inv[id]>1?' ×'+AR(P.inv[id]):''} ${equipped.has(id)?'<span class="tag-eq">مجهّز</span>':''}</span><span class="lbl">${it.desc}</span></span>${extra||''}</div>`;};
-  const use=ids.filter(id=>ITEMS[id].use),key=ids.filter(id=>ITEMS[id].key),gear=ids.filter(id=>ITEMS[id].slot),mats=ids.filter(id=>ITEMS[id].mat);
+  const use=ids.filter(id=>ITEMS[id].use),key=ids.filter(id=>ITEMS[id].key||ITEMS[id].tool),gear=ids.filter(id=>ITEMS[id].slot),mats=ids.filter(id=>ITEMS[id].mat);
   const none='<p class="muted">لا شيء بعد.</p>';
   return `<h3>الحقيبة</h3><p class="coins" style="color:#7a4a26;margin:0 0 6px">${COIN}${baisa(P.money)}</p>${bagMsg?`<p class="quest" role="status" style="padding:8px 12px">${bagMsg}</p>`:''}
   <h4>المؤن</h4><div class="list">${use.length?use.map(id=>row(id,`<button type="button" class="btn" data-use="${id}">استخدام</button>`)).join(''):none}</div>
@@ -5179,6 +5322,8 @@ const ACH=[
   {id:'peddler',name:'زبون أبي خلفان',desc:'اشترِ شيئًا من البائع المتجول.',flag:true},
   {id:'race1',name:'فارس الهجن',desc:'افز بسباق هجن في وادي الفلج.',flag:true},
   {id:'race3',name:'كأس عين الوادي',desc:'افز بأصعب سباق للهجن.',flag:true},
+  {id:'souq',name:'زبون السوق',desc:'اشترِ شيئًا من بسطات السوق.',flag:true},
+  {id:'haggle',name:'مساوم شاطر',desc:'اشترِ القطعة النادرة من سليمان بخصم الربع أو أكثر من سعرها الأصلي.',flag:true},
   {id:'fish1',name:'أول صيد',desc:'اصطد أول سمكة.',test:()=>fishCount()>=1},
   {id:'fish25',name:'صيّاد الفلج',desc:'اصطد ٢٥ سمكة.',test:()=>fishCount()>=25,prog:()=>[Math.min(25,fishCount()),25]},
   {id:'golden',name:'الحظ الذهبي',desc:'اصطد السمكة الذهبية. يقال إنها تظهر أكثر تحت المطر وعند الفجر والمغرب.',test:()=>!!(P.fishLog&&P.fishLog.golden)},
@@ -5239,7 +5384,7 @@ function start(data){
 }
 window.claude?.hot?.snapshot?.(()=>snapshot());
 window.__game={get state(){return state;},get scene(){return scene.id;},get target(){return target;},get met(){return met.size;},get quest(){return questStarted;},get chapter(){return chapterDone;},
-  hero,keys,NPCS,MAP,SCENES,resolve,act,collidersFor,drawPerson,drawHero,LOOKS,openMenu,closeMenu,stat,heroSpeed,startEncounter,get B(){return B;},FOREST,setChapter(v){chapterDone=v;questStarted=true;syncAisha();},FORT,WADI,get gateSeq(){return gateSeq;},openGate,nightAmount,SFX,get FG(){return FG;},get RACE(){return RACE;},get time(){return time;},startRace,racePress,MUBARAK,openShop,setHold(v){fishHold=v;},fishWater,achUnlock,ACH,WX,wxNow,wxPlan,get P(){return P;},OPT,get toast(){return toastKey;},get view(){return view;},
+  hero,keys,NPCS,MAP,SCENES,resolve,act,collidersFor,drawPerson,drawHero,LOOKS,openMenu,closeMenu,stat,heroSpeed,startEncounter,get B(){return B;},FOREST,setChapter(v){chapterDone=v;questStarted=true;syncAisha();},FORT,WADI,get gateSeq(){return gateSeq;},openGate,nightAmount,SFX,get FG(){return FG;},marketDay,marketOpen,haggleState,haggleOffer,STALLS,get RACE(){return RACE;},get time(){return time;},startRace,racePress,MUBARAK,openShop,setHold(v){fishHold=v;},fishWater,achUnlock,ACH,WX,wxNow,wxPlan,get P(){return P;},OPT,get toast(){return toastKey;},get view(){return view;},
   step(dt,n=1){for(let i=0;i<n;i++)update(dt);}};
 window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
 

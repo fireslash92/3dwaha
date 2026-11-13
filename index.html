@@ -17,10 +17,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;700&display=swap">
 <style>[hidden]{display:none!important}</style>
-<link rel="stylesheet" href="styles/main.css?v=01b470bec3">
+<link rel="stylesheet" href="styles/main.css?v=6b71f370c7">
 </head>
 <body>
 <div id="game" class="title" dir="rtl" lang="ar">
+  <canvas id="view3d" aria-hidden="true"></canvas>
   <canvas id="view" aria-label="قرية عين الوادي"></canvas>
   <div id="topRight"><div id="hud" hidden><span id="hudLabel">أهل القرية</span><b id="hudCount">٠ من ٨</b></div><canvas id="mini" aria-label="الخريطة الصغيرة" role="img"></canvas></div>
   <button id="menuBtn" type="button" aria-label="فتح القائمة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>القائمة<span class="dot" id="menuDot" hidden></span></button>
@@ -91,56 +92,61 @@
     </div>
   </div>
 </div>
-<script src="src/core/helpers.js?v=01b470bec3"></script>
-<script src="src/world/village-map.js?v=01b470bec3"></script>
-<script src="src/world/interiors.js?v=01b470bec3"></script>
-<script src="src/core/collision.js?v=01b470bec3"></script>
-<script src="src/art/hero.js?v=01b470bec3"></script>
-<script src="src/art/villagers.js?v=01b470bec3"></script>
-<script src="src/art/props.js?v=01b470bec3"></script>
-<script src="src/world/ground.js?v=01b470bec3"></script>
-<script src="src/world/drawables.js?v=01b470bec3"></script>
-<script src="src/world/scenes.js?v=01b470bec3"></script>
-<script src="src/story/people.js?v=01b470bec3"></script>
-<script src="src/rpg/data.js?v=01b470bec3"></script>
-<script src="src/rpg/progression.js?v=01b470bec3"></script>
-<script src="src/core/state.js?v=01b470bec3"></script>
-<script src="src/fx/feel.js?v=01b470bec3"></script>
-<script src="src/core/view.js?v=01b470bec3"></script>
-<script src="src/core/input.js?v=01b470bec3"></script>
-<script src="src/story/flow.js?v=01b470bec3"></script>
-<script src="src/core/update.js?v=01b470bec3"></script>
-<script src="src/core/render.js?v=01b470bec3"></script>
-<script src="src/world/forest.js?v=01b470bec3"></script>
-<script src="src/battle/battle.js?v=01b470bec3"></script>
-<script src="src/audio/audio.js?v=01b470bec3"></script>
-<script src="src/rpg/economy.js?v=01b470bec3"></script>
-<script src="src/story/side-quests.js?v=01b470bec3"></script>
-<script src="src/world/day-night.js?v=01b470bec3"></script>
-<script src="src/battle/elements.js?v=01b470bec3"></script>
-<script src="src/battle/monsters.js?v=01b470bec3"></script>
-<script src="src/world/wadi.js?v=01b470bec3"></script>
-<script src="src/ui/bestiary.js?v=01b470bec3"></script>
-<script src="src/world/fort.js?v=01b470bec3"></script>
-<script src="src/world/life.js?v=01b470bec3"></script>
-<script src="src/world/weather.js?v=01b470bec3"></script>
-<script src="src/fx/atmosphere.js?v=01b470bec3"></script>
-<script src="src/world/fishing.js?v=01b470bec3"></script>
-<script src="src/world/camel-race.js?v=01b470bec3"></script>
-<script src="src/world/market.js?v=01b470bec3"></script>
-<script src="src/world/areas.js?v=01b470bec3"></script>
-<script src="src/ui/worldmap.js?v=01b470bec3"></script>
-<script src="src/story/chapter5.js?v=01b470bec3"></script>
-<script src="src/world/diving.js?v=01b470bec3"></script>
-<script src="src/story/chapter6.js?v=01b470bec3"></script>
-<script src="src/story/chapter7.js?v=01b470bec3"></script>
-<script src="src/story/chapter8.js?v=01b470bec3"></script>
-<script src="src/ui/minimap.js?v=01b470bec3"></script>
-<script src="src/core/save.js?v=01b470bec3"></script>
-<script src="src/ui/menu.js?v=01b470bec3"></script>
-<script src="src/ui/achievements.js?v=01b470bec3"></script>
-<script src="src/ui/pets.js?v=01b470bec3"></script>
-<script src="src/boot.js?v=01b470bec3"></script>
+<script src="vendor/babylon.js"></script>
+<script src="src/core/helpers.js?v=6b71f370c7"></script>
+<script src="src/world/village-map.js?v=6b71f370c7"></script>
+<script src="src/world/interiors.js?v=6b71f370c7"></script>
+<script src="src/core/collision.js?v=6b71f370c7"></script>
+<script src="src/art/hero.js?v=6b71f370c7"></script>
+<script src="src/art/villagers.js?v=6b71f370c7"></script>
+<script src="src/art/props.js?v=6b71f370c7"></script>
+<script src="src/world/ground.js?v=6b71f370c7"></script>
+<script src="src/world/drawables.js?v=6b71f370c7"></script>
+<script src="src/world/scenes.js?v=6b71f370c7"></script>
+<script src="src/story/people.js?v=6b71f370c7"></script>
+<script src="src/rpg/data.js?v=6b71f370c7"></script>
+<script src="src/rpg/progression.js?v=6b71f370c7"></script>
+<script src="src/core/state.js?v=6b71f370c7"></script>
+<script src="src/fx/feel.js?v=6b71f370c7"></script>
+<script src="src/core/view.js?v=6b71f370c7"></script>
+<script src="src/core/input.js?v=6b71f370c7"></script>
+<script src="src/story/flow.js?v=6b71f370c7"></script>
+<script src="src/core/update.js?v=6b71f370c7"></script>
+<script src="src/core/render.js?v=6b71f370c7"></script>
+<script src="src/world/forest.js?v=6b71f370c7"></script>
+<script src="src/battle/battle.js?v=6b71f370c7"></script>
+<script src="src/audio/audio.js?v=6b71f370c7"></script>
+<script src="src/rpg/economy.js?v=6b71f370c7"></script>
+<script src="src/story/side-quests.js?v=6b71f370c7"></script>
+<script src="src/world/day-night.js?v=6b71f370c7"></script>
+<script src="src/battle/elements.js?v=6b71f370c7"></script>
+<script src="src/battle/monsters.js?v=6b71f370c7"></script>
+<script src="src/world/wadi.js?v=6b71f370c7"></script>
+<script src="src/ui/bestiary.js?v=6b71f370c7"></script>
+<script src="src/world/fort.js?v=6b71f370c7"></script>
+<script src="src/world/life.js?v=6b71f370c7"></script>
+<script src="src/world/weather.js?v=6b71f370c7"></script>
+<script src="src/fx/atmosphere.js?v=6b71f370c7"></script>
+<script src="src/world/fishing.js?v=6b71f370c7"></script>
+<script src="src/world/camel-race.js?v=6b71f370c7"></script>
+<script src="src/world/market.js?v=6b71f370c7"></script>
+<script src="src/world/areas.js?v=6b71f370c7"></script>
+<script src="src/ui/worldmap.js?v=6b71f370c7"></script>
+<script src="src/story/chapter5.js?v=6b71f370c7"></script>
+<script src="src/world/diving.js?v=6b71f370c7"></script>
+<script src="src/story/chapter6.js?v=6b71f370c7"></script>
+<script src="src/story/chapter7.js?v=6b71f370c7"></script>
+<script src="src/story/chapter8.js?v=6b71f370c7"></script>
+<script src="src/ui/minimap.js?v=6b71f370c7"></script>
+<script src="src/core/save.js?v=6b71f370c7"></script>
+<script src="src/ui/menu.js?v=6b71f370c7"></script>
+<script src="src/ui/achievements.js?v=6b71f370c7"></script>
+<script src="src/ui/pets.js?v=6b71f370c7"></script>
+<script src="src/gl/engine.js?v=6b71f370c7"></script>
+<script src="src/gl/builders.js?v=6b71f370c7"></script>
+<script src="src/gl/people.js?v=6b71f370c7"></script>
+<script src="src/gl/world.js?v=6b71f370c7"></script>
+<script src="src/boot.js?v=6b71f370c7"></script>
 <script>
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script>

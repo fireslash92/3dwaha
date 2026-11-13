@@ -13,7 +13,7 @@ function frame(now){
 function start(data){
   data=data||{};
   Object.assign(OPT,load(OPT_KEY)||{});applyOptions();
-  resize();ensureScene(scene);
+  glInit();resize();ensureScene(scene);
   view.camX=576-view.w/view.zoom/2;view.camY=430-view.h/view.zoom/2;
   savedData=load(SAVE_KEY);
   if(data.started){applySave(data);startGame(true);titleEl.hidden=true;}

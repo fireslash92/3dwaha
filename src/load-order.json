@@ -48,5 +48,9 @@
  "src/ui/menu.js",
  "src/ui/achievements.js",
  "src/ui/pets.js",
+ "src/gl/engine.js",
+ "src/gl/builders.js",
+ "src/gl/people.js",
+ "src/gl/world.js",
  "src/boot.js"
 ]

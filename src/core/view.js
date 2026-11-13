@@ -34,5 +34,6 @@ function resize(){
   vg.addColorStop(0,'rgba(40,20,6,0)');vg.addColorStop(1,'rgba(40,20,6,.34)');view.vig=vg;
   const wm=ctx.createLinearGradient(0,0,w*.7,h);wm.addColorStop(0,'rgba(255,196,120,.13)');wm.addColorStop(1,'rgba(255,196,120,0)');view.warm=wm;
   stickHome(true);
+  glResize();
   if(B){B.bg=null;layoutEnemies();}
 }

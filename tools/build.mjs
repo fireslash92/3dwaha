@@ -20,7 +20,8 @@ const TITLE='أسرار عين الوادي';
 const FONT='<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;700&display=swap">';
 
 // 1) index.html
-const tags=order.map(p=>`<script src="${p}?v=${version}"></script>`).join('\n');
+const VENDOR='vendor/babylon.js';
+const tags=`<script src="${VENDOR}"></script>\n`+order.map(p=>`<script src="${p}?v=${version}"></script>`).join('\n');
 writeFileSync(join(root,'index.html'),`<!doctype html>
 <!-- هذا الملف يُولَّد تلقائيًا من tools/build.mjs، فلا تعدّله يدويًا -->
 <html lang="ar" dir="rtl">
@@ -52,7 +53,7 @@ if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostnam
 `);
 
 // 2) sw.js
-const assets=['./','index.html','manifest.webmanifest','styles/main.css?v='+version,'icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png',...order.map(p=>`${p}?v=${version}`)];
+const assets=['./','index.html','manifest.webmanifest','styles/main.css?v='+version,'icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png',VENDOR,...order.map(p=>`${p}?v=${version}`)];
 writeFileSync(join(root,'sw.js'),`// يُولَّد تلقائيًا من tools/build.mjs
 const CACHE='ayn-alwadi-${version}';
 const ASSETS=${JSON.stringify(assets,null,1)};
@@ -81,6 +82,7 @@ ${css}</style>
 
 ${markup}
 
+<script src="${VENDOR}"></script>
 <script>
 (() => {
 'use strict';

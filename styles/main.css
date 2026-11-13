@@ -20,7 +20,8 @@ body{
 }
 #game{position:fixed;inset:0;overflow:hidden;touch-action:none;background:#22301a}
 #game *{touch-action:none}
-#view{position:absolute;inset:0;width:100%;height:100%;display:block}
+#view,#view3d{position:absolute;inset:0;width:100%;height:100%;display:block}
+#view3d{outline:none}
 #fade{position:absolute;inset:0;z-index:9;background:#0e0905;opacity:0;pointer-events:none;transition:opacity .24s}
 #fade.on{opacity:1}
 

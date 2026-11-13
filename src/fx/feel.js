@@ -21,7 +21,7 @@ function hitStop(ms){freezeT=time;freezeUntil=time+ms/1000;return wait(ms);}
 let TR=null;
 function startTransition(boss,onMid){
   const img=document.createElement('canvas');img.width=canvas.width;img.height=canvas.height;
-  try{img.getContext('2d').drawImage(canvas,0,0);}catch(_){}
+  try{const ig=img.getContext('2d');if(GL.ok&&!B&&!RACE&&!DIVE){GL.scene.render();ig.drawImage(GL.canvas,0,0,img.width,img.height);}ig.drawImage(canvas,0,0);}catch(_){}
   const lead=boss?.55:0;
   TR={t0:time,img,boss,lead,mid:lead+.5,end:lead+1.05,onMid,fired:false};gameEl.classList.add('transit');
   if(boss){shake(6,.5);buzz(80);}

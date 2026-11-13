@@ -52,5 +52,6 @@
  "src/gl/builders.js",
  "src/gl/people.js",
  "src/gl/world.js",
+ "src/gl/battle3d.js",
  "src/boot.js"
 ]

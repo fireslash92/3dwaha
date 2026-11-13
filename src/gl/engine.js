@@ -150,5 +150,6 @@ function canvasMat(name,cv,blend){
   t.hasAlpha=true;t.wrapU=t.wrapV=BABYLON.Texture.CLAMP_ADDRESSMODE;t.update(true);
   const m=new BABYLON.StandardMaterial(name,GL.scene);m.diffuseTexture=t;m.specularColor=BABYLON.Color3.Black();m.backFaceCulling=false;
   if(blend){m.useAlphaFromDiffuseTexture=true;m.disableDepthWrite=true;}else m.alphaCutOff=.35;
+  if(GL.matSink)GL.matSink.push(m);
   return m;
 }

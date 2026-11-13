@@ -530,7 +530,7 @@ function drawGuardian(g,t,e){
   if(e.veil>0){g.strokeStyle=`rgba(255,240,190,${.45+.25*Math.sin(t*6)})`;g.lineWidth=2.4;ell(g,0,y-6,72,82);g.stroke();g.strokeStyle='rgba(255,240,190,.2)';g.lineWidth=8;ell(g,0,y-6,72,82);g.stroke();}
   for(let i=0;i<6;i++){const k=(t*.3+i/6)%1;g.fillStyle=`rgba(255,240,180,${.8*(1-k)})`;circ(g,Math.sin(t+i*2.3)*(40+k*20),y+30-k*90,1.6);}
 }
-function drawMember(g,id,t){
+function drawMember(g,id,t,only3d){
   const m=B.m[id],p=mPos(id),ha=time-m.actT,hh=time-m.hitT,ko=mHP(id)<=0;
   let dx=0,dy=0;
   if(m.act==='lunge'&&ha<.5)dx=-Math.sin(ha/.5*Math.PI)*46;
@@ -538,6 +538,7 @@ function drawMember(g,id,t){
   if(m.act==='win')dy=-Math.abs(Math.sin(ha*6+(id==='aisha'?1:0)))*8*Math.max(0,1-ha/2.5);
   if(hh<.35)dx+=Math.sin(hh*70)*3;
   if(id==='hero'&&B.palm>0||B.weave>0){g.strokeStyle=`rgba(120,220,140,${.5+.2*Math.sin(t*4)})`;g.lineWidth=2;ell(g,p.x,p.y,20,6);g.stroke();}
+  if(!only3d){
   g.save();g.translate(p.x+dx,p.y+dy);
   if(ko){g.globalAlpha=.55;g.translate(0,4);g.rotate(-.25);}
   else if(hh<.35&&Math.floor(hh*20)%2)g.globalAlpha=.45;
@@ -546,17 +547,20 @@ function drawMember(g,id,t){
   if(id==='hero')drawHero(g,0,0,'left',lunging?ha*20:0,lunging,t,false);
   else drawPerson(g,0,0,'left',LOOKS.aisha,t,lunging,lunging?ha*20:0);
   g.restore();
+  }
   if(m.guard){g.fillStyle='rgba(120,180,255,.22)';g.strokeStyle='rgba(170,210,255,.8)';g.lineWidth=1.6;ell(g,p.x-20,p.y-30,10,30);g.fill();g.stroke();}
   if(B&&!B.busy&&!B.ended&&B.actor===id&&members().length>1){g.fillStyle='#ffd88a';const by=p.y-(id==='hero'?82:70)+Math.sin(t*6)*2;poly(g,[p.x-5,by-6,p.x+5,by-6,p.x,by]);}
 }
 function renderBattle(){
   const g=ctx,d=view.dpr,t=animTime(),{sc,ox,oy,SW}=stageDims(),so=shakeOffset();
-  g.setTransform(1,0,0,1,0,0);g.drawImage(battleBackdrop(),-10*d+so[0]*d*.6,-10*d+so[1]*d*.6,canvas.width+20*d,canvas.height+20*d);
   let z=1,fx0=0,fy0=0;if(B.focus){const q=(time-B.focus.t0)/1.7;if(q<1){z=1+.38*Math.sin(Math.min(1,q*1.6)*Math.PI/2)*(q<.7?1:1-(q-.7)/.3);fx0=B.focus.x;fy0=B.focus.y;}}
+  const g3=glBattle(t,so,z,fx0,fy0);
+  g.setTransform(1,0,0,1,0,0);
+  if(g3)g.clearRect(0,0,canvas.width,canvas.height);else g.drawImage(battleBackdrop(),-10*d+so[0]*d*.6,-10*d+so[1]*d*.6,canvas.width+20*d,canvas.height+20*d);
   g.setTransform(d*sc*z,0,0,d*sc*z,d*(ox+so[0])+d*sc*fx0*(1-z),d*(oy+so[1])+d*sc*fy0*(1-z));
-  const items=B.enemies.map(e=>({y:e.y,f:()=>drawEnemy(g,e,t)}));
-  members().forEach(id=>{const p=mPos(id);items.push({y:p.y,f:()=>drawMember(g,id,t)});});
-  if(B.pet&&(B.pet.hp>0||time-B.m.pet.hitT<.6))items.push({y:B.py,f:()=>drawPetStage(g,t)});
+  const items=g3?[]:B.enemies.map(e=>({y:e.y,f:()=>drawEnemy(g,e,t)}));
+  members().forEach(id=>{const p=mPos(id);items.push({y:p.y,f:()=>drawMember(g,id,t,g3)});});
+  if(!g3&&B.pet&&(B.pet.hp>0||time-B.m.pet.hitT<.6))items.push({y:B.py,f:()=>drawPetStage(g,t)});
   items.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
   B.fx=B.fx.filter(f=>time-f.t0<1.2);
   for(const f of B.fx){

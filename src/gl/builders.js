@@ -117,7 +117,7 @@ function buildFountain(F,list){
     shp(cyl(13,128,134,22),'#b9ad98',0,6.5,0),shp(cyl(3,134,134,22),'#d2c8b4',0,13.5,0),shp(cyl(4,140,140,22),'#9a8e7a',0,2,0),
     shp(cyl(34,12,17,10),'#c9bda6',0,17,0),shp(cyl(5,38,12,12),'#b9ad98',0,36.5,0),shp(cyl(3,40,38,12),'#d2c8b4',0,40.5,0),shp(cyl(16,7,9,8),'#c9bda6',0,48,0),shp(sph(9,8),'#d9cdb6',0,58,0)],false),'fstone');
   stone.parent=root;stone.receiveShadows=true;glCast(stone);list.push(stone);
-  const wm=new BABYLON.StandardMaterial('water',sc);wm.diffuseColor=col3('#3f8fae');wm.emissiveColor=col3('#16485c');wm.specularColor=new BABYLON.Color3(.9,.9,.8);wm.specularPower=48;wm.alpha=.86;
+  const wm=new BABYLON.StandardMaterial('water',sc);wm.diffuseColor=col3('#3f8fae');wm.emissiveColor=col3('#16485c');wm.specularColor=new BABYLON.Color3(.9,.9,.8);wm.specularPower=48;wm.alpha=.86;if(GL.matSink)GL.matSink.push(wm);
   const water=MB().CreateDisc('fw',{radius:59,tessellation:24},sc);water.rotation.x=Math.PI/2;water.position.y=15.6;water.parent=root;water.material=wm;list.push(water);
   const bowl=MB().CreateDisc('fb',{radius:17,tessellation:14},sc);bowl.rotation.x=Math.PI/2;bowl.position.y=41.6;bowl.parent=root;bowl.material=wm;list.push(bowl);
   // falling water

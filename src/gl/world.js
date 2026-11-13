@@ -79,7 +79,7 @@ function glDisposeScene(){
   for(const f of W3.people.values())disposeFigure(f);
   if(W3.fol){disposeFigure(W3.fol);W3.fol=null;}
   for(const l of W3.live){l.mesh.dispose();}
-  W3.own=[];W3.bills=[];W3.live=[];GL.ownMats=[];W3.people.clear();W3.fountain=null;BILLKEY.clear();
+  W3.own=[];W3.bills=[];W3.live=[];GL.ownMats=[];GL.matSink=GL.ownMats;W3.people.clear();W3.fountain=null;BILLKEY.clear();
 }
 function glBuildScene(sc){
   glDisposeScene();
@@ -269,6 +269,8 @@ function glOverlay(t){
 let glLast=0;
 function glFrame(){
   const now=performance.now(),dt=Math.min(.05,Math.max(.001,(now-glLast)/1000));glLast=now;
+  if(GLB.B)glBattleEnd();
+  GL.cam.fov=FOV;
   if(GL.shadowQ!==glQuality()){glShadows();glResize();}
   if(W3.id!==scene.id||W3.cv!==scene.ground)glBuildScene(scene);
   const t=time;
